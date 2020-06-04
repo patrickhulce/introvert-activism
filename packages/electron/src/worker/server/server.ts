@@ -9,18 +9,21 @@ import {
   PromiseInterface,
 } from '../../../../shared/src/utils/comlink-electron'
 import {createLogger} from '../../../../shared/src/utils/logging'
+import {createApiRouter} from '../../api/src/api'
 import {findFrontendDirectory} from '../../utils/filesystem'
 
 const log = createLogger('electron:server')
 
 async function startServer(): Promise<{port: number; close(): void}> {
   const app = express()
+  const router = createApiRouter()
 
   app.use('/static', express.static(findFrontendDirectory()))
+  app.use('/api', router)
 
   return new Promise(resolve => {
     const server = createServer(app)
-    server.listen(0, () => {
+    server.listen(1337, () => {
       const address = server.address()
       if (typeof address === 'string' || !address) throw new Error(`Invalid address ${address}`)
       log.info(`app server available on port ${address.port}`)
