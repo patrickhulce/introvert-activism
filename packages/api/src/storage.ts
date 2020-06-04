@@ -11,13 +11,7 @@ export class LocalApiStore {
     folder = folder || 'App_File_Storage'
     this._localFsPath = path.join(localPath, folder)
     // Init the directories
-    if (!fs.existsSync(this._localFsPath)) {
-      fs.mkdirSync(this._localFsPath)
-    }
-    // Init the 'messages' dir.
-    if (!fs.existsSync(path.join(this._localFsPath, 'messages'))) {
-      fs.mkdirSync(path.join(this._localFsPath, 'messages'))
-    }
+    fs.mkdirSync(path.join(this._localFsPath, 'messages'), {recursive: true})
     // Init the 'message.json' file if none exists.
     if (!fs.existsSync(path.join(this._localFsPath, 'messages/messages.json'))) {
       // TODO: one big file, or a lot of little small files?
@@ -40,12 +34,7 @@ export class LocalApiStore {
       throw new Error('Not Found')
     }
 
-    const file = JSON.parse(
-      fs.readFileSync(this._messagesPath, {
-        encoding: 'utf8',
-        flag: 'r',
-      }),
-    )
+    const file = JSON.parse(fs.readFileSync(this._messagesPath, 'utf8'))
 
     return file.messages
   }
@@ -56,12 +45,7 @@ export class LocalApiStore {
       throw new Error('Not Found')
     }
 
-    const messages = JSON.parse(
-      fs.readFileSync(this._messagesPath, {
-        encoding: 'utf8',
-        flag: 'r',
-      }),
-    )
+    const messages = JSON.parse(fs.readFileSync(this._messagesPath, 'utf8'))
 
     // Add our new message to the messages array.
     messages.messages.push(message)
