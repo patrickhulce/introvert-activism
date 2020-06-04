@@ -5,6 +5,7 @@ export interface Response<T> {
 
 export interface ResponseTypes {
   Messages: Response<MessagesPayload>
+  Message: Response<MessagePayload>
 }
 
 export interface Message {
