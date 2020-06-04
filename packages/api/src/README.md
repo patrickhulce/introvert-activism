@@ -1,4 +1,3 @@
-
 ## API Happy Hacking Hints
 
 List out messages
