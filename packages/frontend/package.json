@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "electron-typescript-starter-frontend",
+  "name": "introvert-activism-frontend",
   "description": "The frontend package.json only to build the frontend.",
   "version": "0.0.0",
   "browserslist": [

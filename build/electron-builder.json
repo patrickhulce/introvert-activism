@@ -1,6 +1,6 @@
 {
-  "appId": "com.patrickhulce.electronstarter",
-  "productName": "Hello World",
+  "appId": "com.patrickhulce.introvertactivism",
+  "productName": "Introvert Activism",
   "copyright": "© 2020 Patrick Hulce",
   "icon": "build/icon.png",
   "files": [

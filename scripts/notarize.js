@@ -16,7 +16,7 @@ exports.default = async function notarizing(context) {
 
   console.log('Initializing notarization!')
   await notarize({
-    appBundleId: 'com.patrickhulce.electronstarter',
+    appBundleId: 'com.patrickhulce.introvertactivism',
     appPath: `${appOutDir}/${filename}.app`,
     appleId: process.env.APPLE_ACCOUNT_EMAIL,
     appleIdPassword: process.env.APPLE_ACCOUNT_PASSWORD, // this is an app-specific password generated at https://appleid.apple.com/account/manage

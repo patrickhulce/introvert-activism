@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "electron-typescript-starter-dev",
+  "name": "introvert-activism-dev",
   "description": "The development package.json only to run electron in development.",
   "version": "0.0.0",
   "main": "../../dist-dev/electron/src/main/entry.js",

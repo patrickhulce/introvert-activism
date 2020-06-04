@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "electron-typescript-starter",
+  "name": "introvert-activism",
   "description": "The production package.json for the published app.",
   "version": "1.0.0",
   "main": "dist-ts/electron/src/main/entry.js",
@@ -12,7 +12,7 @@
     "test": "yarn test:lint",
     "test:lint": "eslint . --ext .ts,.tsx"
   },
-  "repository": "https://github.com/patrickhulce/electron-typescript-starter.git",
+  "repository": "https://github.com/patrickhulce/introvert-activism.git",
   "author": "Patrick Hulce <patrick.hulce@gmail.com>",
   "license": "MIT",
   "dependencies": {
