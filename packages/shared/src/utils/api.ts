@@ -17,3 +17,7 @@ export interface Message {
 export interface MessagesPayload {
   messages: Message[]
 }
+
+export interface MessagePayload {
+  message: Message
+}
