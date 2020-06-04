@@ -1,5 +1,6 @@
 import {createServer} from 'http'
 
+import bodyParser from 'body-parser'
 import {ipcRenderer} from 'electron'
 import express from 'express'
 
@@ -14,9 +15,11 @@ import {findFrontendDirectory} from '../../utils/filesystem'
 
 const log = createLogger('electron:server')
 
-async function startServer(): Promise<{port: number; close(): void}> {
+async function startServer(localFilePath: string): Promise<{port: number; close(): void}> {
   const app = express()
-  const router = createApiRouter()
+  const router = createApiRouter(localFilePath)
+
+  app.use(bodyParser.json())
 
   app.use('/static', express.static(findFrontendDirectory()))
   app.use('/api', router)
@@ -35,9 +38,9 @@ async function startServer(): Promise<{port: number; close(): void}> {
 const service = {
   port: 0,
   close() {},
-  startServer: async () => {
+  startServer: async (path: string) => {
     service.close()
-    const {port, close} = await startServer()
+    const {port, close} = await startServer(path)
     service.port = port
     service.close = close
     return {port}
