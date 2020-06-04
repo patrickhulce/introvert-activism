@@ -1,0 +1,13 @@
+node_modules/
+.parcel-cache/
+.cache/
+.tmp/
+dist/
+dist-ts/
+dist-dev/
+dist-app/
+gen/
+public/
+
+# Exclude logs
+*.log

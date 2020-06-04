@@ -1,0 +1,33 @@
+{
+  "appId": "com.patrickhulce.electronstarter",
+  "productName": "Hello World",
+  "copyright": "© 2020 Patrick Hulce",
+  "icon": "build/icon.png",
+  "files": [
+    "dist-ts/**/*",
+    "node_modules/**/*",
+    "!dist-ts/**/tests/**/*",
+    "!**/*.d.ts",
+    "!**/*.map"
+  ],
+  "afterSign": "scripts/notarize.js",
+  "dmg": {
+    "sign": false
+  },
+  "nsis": {
+    "artifactName": "${productName}-${version}.${ext}",
+    "deleteAppDataOnUninstall": true,
+    "createDesktopShortcut": "always"
+  },
+  "mac": {
+    "hardenedRuntime": true,
+    "gatekeeperAssess": false,
+    "entitlements": "build/entitlements.mac.plist",
+    "entitlementsInherit": "build/entitlements.mac.plist",
+
+    "minimumSystemVersion": "10.12.0"
+  },
+  "publish": {
+    "provider": "github"
+  }
+}

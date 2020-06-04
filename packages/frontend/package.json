@@ -1,0 +1,13 @@
+{
+  "private": true,
+  "name": "electron-typescript-starter-frontend",
+  "description": "The frontend package.json only to build the frontend.",
+  "version": "0.0.0",
+  "browserslist": [
+    "Chrome > 80"
+  ],
+  "scripts": {
+    "build": "../../node_modules/.bin/parcel build src/index.html --public-url=./",
+    "build:watch": "../../node_modules/.bin/parcel watch src/index.html --public-url=./"
+  }
+}
