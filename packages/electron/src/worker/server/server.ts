@@ -3,13 +3,13 @@ import {createServer} from 'http'
 import {ipcRenderer} from 'electron'
 import express from 'express'
 
+import {createApiRouter} from '../../../../api/src/api'
 import {
   ComlinkElectron,
   ComlinkTarget,
   PromiseInterface,
 } from '../../../../shared/src/utils/comlink-electron'
 import {createLogger} from '../../../../shared/src/utils/logging'
-import {createApiRouter} from '../../api/src/api'
 import {findFrontendDirectory} from '../../utils/filesystem'
 
 const log = createLogger('electron:server')
