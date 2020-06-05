@@ -16,11 +16,15 @@ export const MessageList = () => {
     })()
   }, [])
 
-  return data.messages.map(message => {
-    return (
-      <div key={message.uuid}>
-        {message.display_name}–duration {message.duration}
-      </div>
-    )
-  })
+  return (
+    <>
+      {data.messages.map(message => {
+        return (
+          <div key={message.uuid}>
+            {message.display_name}–duration {message.duration}
+          </div>
+        )
+      })}
+    </>
+  )
 }

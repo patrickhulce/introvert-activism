@@ -12,31 +12,37 @@ const getMedia = async (constraints: MediaStreamConstraints) => {
     return await navigator.mediaDevices.getUserMedia(constraints)
   } catch (err) {
     console.log('Error:', err)
+    return null
   }
 }
 
-function useRecorder(recorder): [boolean, any] {
-  const [recording, setRecording] = React.useState(false)
+function useRecorder(
+  recorder: MediaRecorder | null,
+): [boolean, React.Dispatch<React.SetStateAction<boolean>>] {
+  const [isRecording, setRecording] = React.useState(false)
 
   React.useEffect(() => {
     if (!recorder) return
 
-    if (recording && recorder.state === 'inactive') {
+    if (isRecording && recorder.state === 'inactive') {
       recorder.start(100)
-    } else if (!recording && recorder.state === 'recording') {
+    } else if (!isRecording && recorder.state === 'recording') {
       recorder.stop()
     }
-  }, [recording, recorder])
+  }, [isRecording, recorder])
 
-  return [recording, setRecording]
+  return [isRecording, setRecording]
 }
 
-const useMeydaAnalyser = (stream, recording) => {
-  const [features, setFeatures] = React.useState(null)
+const useMeydaAnalyser = (
+  stream: MediaStream | null,
+  isRecording: boolean,
+): Partial<Meyda.MeydaFeaturesObject> | null => {
+  const [features, setFeatures] = React.useState<Partial<Meyda.MeydaFeaturesObject> | null>(null)
 
-  let analyzer
+  let analyzer: Meyda.MeydaAnalyzer | undefined
   React.useEffect(() => {
-    if (!stream || !recording) return
+    if (!stream || !isRecording) return
 
     const audioContext = new AudioContext()
 
@@ -56,14 +62,14 @@ const useMeydaAnalyser = (stream, recording) => {
       if (analyzer) analyzer.stop()
       if (audioContext) audioContext.close()
     }
-  }, [stream, recording])
+  }, [stream, isRecording])
 
   return features
 }
 
 export const RecordMessageScreen = () => {
-  const levelRange = React.useRef(null)
-  const audio = React.useRef(null)
+  const levelRange = React.useRef<HTMLInputElement | null>(null)
+  const audioEl = React.useRef<HTMLAudioElement | null>(null)
 
   const mediaStream = React.useRef<MediaStream | null>(null)
   const mediaRecorder = React.useRef<MediaRecorder | null>(null)
@@ -81,7 +87,7 @@ export const RecordMessageScreen = () => {
 
     // @ts-ignore
     const recorder = new MediaRecorder(mediaStream.current)
-    recorder.ondataavailable = e => {
+    recorder.ondataavailable = (e: any) => {
       mediaChunks.current.push(e.data)
     }
     recorder.onerror = console.error
@@ -91,21 +97,22 @@ export const RecordMessageScreen = () => {
   const [recording, setRecording] = useRecorder(mediaRecorder.current)
 
   React.useEffect(() => {
-    if (!mediaRecorder.current) return
+    if (!mediaRecorder.current || !audioEl.current) return
 
     if (recording) {
-      audio.current.src = ''
+      audioEl.current.src = ''
       mediaChunks.current = []
     } else {
       const blob = new Blob(mediaChunks.current, {type: 'audio/ogg; codecs=opus'})
-      audio.current.src = URL.createObjectURL(blob)
+      audioEl.current.src = URL.createObjectURL(blob)
     }
   }, [recording])
 
   const features = useMeydaAnalyser(mediaStream.current, recording)
   React.useEffect(() => {
-    if (levelRange.current && features) {
-      levelRange.current.value = features.rms
+    console.log(features)
+    if (levelRange.current && features && features.rms) {
+      levelRange.current.value = features.rms.toString()
     }
   }, [features])
 
@@ -151,7 +158,7 @@ export const RecordMessageScreen = () => {
       <button disabled={recording} onClick={handleSave}>
         Save
       </button>
-      <audio ref={audio} controls></audio>
+      <audio ref={audioEl} controls></audio>
       <input
         ref={levelRange}
         type="range"
