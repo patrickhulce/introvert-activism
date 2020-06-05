@@ -22,6 +22,6 @@
     "moduleResolution": "node",
     "lib": ["es2019", "dom"]
   },
-  "include": ["packages/**/*.ts"],
+  "include": ["packages/**/*.ts", "packages/**/*.tsx"],
   "exclude": ["**/node_modules/", "**/dist/"]
 }

@@ -32,7 +32,7 @@ export async function createWorker<TInterface extends PromiseInterface<any>>(
   const file = `<!DOCTYPE html><html><script>require(${JSON.stringify(filePath)})</script></html>`
   window.loadURL(`data:text/html;base64,${Buffer.from(file).toString('base64')}`)
 
-  await new Promise(resolve => {
+  await new Promise((resolve: () => void) => {
     const messageChannel = ComlinkElectron.MESSAGE_CHANNEL as any
     const listener = (event: IpcMainEvent) => {
       if (event.sender !== window.webContents) return
