@@ -23,3 +23,15 @@ Edit a message.
 ```sh
 $ curl -v localhost:1337/api/messages/{messageId} -X PUT -H 'Content-Type: application/json' -d '{"display_name": "PUTed", "duration": 0}'
 ```
+
+Add audio file.
+
+```sh
+$ curl -v localhost:1337/api/messages/{messageId}/audio -X PUT -H 'Content-Type: application/json' -d '{"data": "011010101"}'
+```
+
+Get audio file.
+
+```sh
+$ curl -v localhost:1337/api/messages/{messageId}/audio
+```

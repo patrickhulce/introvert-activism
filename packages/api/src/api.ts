@@ -39,7 +39,7 @@ export function createApiRouter(localPath: string): express.Router {
   router.get('/messages', async (req, res) => {
     const messages = await store.getMessages()
     res.json(
-      makeResponse<Api.MessagesPayload>({messages}),
+      makeResponse<Api.MessagesPayload>({messages: messages}),
     )
   })
 
@@ -85,12 +85,20 @@ export function createApiRouter(localPath: string): express.Router {
     )
   })
 
-  router.get('/messages/:messageId/audio', (req, res) => {
+  router.get('/messages/:messageId/audio', async (req, res) => {
     // Special MessagePaylod that is not json, only bin'd file.
-    res.status(200).end()
+    const audio = await store.getAudio(req.params.messageId)
+    if (!audio) {
+      res.status(404).end()
+    }
+    res.status(200).json(
+      makeResponse<Api.AudioPayload>({audio: {data: audio || ''}}),
+    )
   })
 
-  router.put('/messages/:messageId/audio', (req, res) => {
+  router.put('/messages/:messageId/audio', async (req, res) => {
+    const body = req.body
+    await store.putAudio(req.params.messageId, body)
     res.status(204).end()
   })
 
@@ -101,6 +109,7 @@ export function createApiRouter(localPath: string): express.Router {
       return
     }
     res.status(204).end()
+    return
   })
 
   router.post('/webhooks/initiate-call', (req, res) => {
