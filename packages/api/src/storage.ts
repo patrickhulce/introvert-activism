@@ -16,7 +16,7 @@ export class LocalApiStore {
     if (!fs.existsSync(path.join(this._localFsPath, 'messages/messages.json'))) {
       // TODO: one big file, or a lot of little small files?
       const singleMsg = {
-        messages: [], // TODO: map, keyed on uuid?
+        messages: {},
       }
       fs.writeFileSync(
         path.join(this._localFsPath, 'messages/messages.json'),
@@ -36,20 +36,88 @@ export class LocalApiStore {
 
     const file = JSON.parse(fs.readFileSync(this._messagesPath, 'utf8'))
 
-    return file.messages
+    return Object.values(file.messages)
   }
 
-  postMessage(message: Api.Message) {
+  /**
+   * Get a message.
+   * @param uuid UUID of message to delete.
+   * @returns Api.Message or null
+   */
+  getMessage(uuid: string) {
     // Parse the messages file.
     if (!fs.existsSync(this._messagesPath)) {
       throw new Error('Not Found')
     }
 
+    const file = JSON.parse(fs.readFileSync(this._messagesPath, 'utf8'))
+
+    // Collapse key'd object into array.
+    const message = file.messages[uuid]
+    if (!message) {
+      return null
+    }
+
+    return message
+  }
+
+  postMessage(message: Api.Message) {
+    if (!fs.existsSync(this._messagesPath)) {
+      throw new Error('Not Found')
+    }
+
+    // Parse the messages file.
     const messages = JSON.parse(fs.readFileSync(this._messagesPath, 'utf8'))
 
     // Add our new message to the messages array.
-    messages.messages.push(message)
+    messages.messages[`${message.uuid}`] = message
 
     fs.writeFileSync(this._messagesPath, JSON.stringify(messages))
+  }
+
+  /**
+   * Delete a message.
+   * @param uuid UUID of message to delete.
+   * @returns boolean if deleted successfully
+   */
+  deleteMessage(uuid: string) {
+    if (!fs.existsSync(this._messagesPath)) {
+      throw new Error('Not Found')
+    }
+
+    // Parse the messages file.
+    const messages = JSON.parse(fs.readFileSync(this._messagesPath, 'utf8'))
+
+    // Check that this object exists
+    if (!messages.messages[uuid]) {
+      return false
+    }
+
+    // Remove our message from the messages object.
+    delete messages.messages[uuid]
+
+    fs.writeFileSync(this._messagesPath, JSON.stringify(messages))
+    return true
+  }
+
+  putMessage(messageId: string, message: Api.Message) {
+    if (!fs.existsSync(this._messagesPath)) {
+      throw new Error('Not Found')
+    }
+
+    // Parse the messages file.
+    const messages = JSON.parse(fs.readFileSync(this._messagesPath, 'utf8'))
+
+    // Get our message to the messages array.
+    let tmpMessage = messages.messages[messageId]
+    if (!tmpMessage) {
+      return
+    }
+    tmpMessage = {...tmpMessage, ...message}
+
+    messages.messages[messageId] = tmpMessage
+
+    fs.writeFileSync(this._messagesPath, JSON.stringify(messages))
+    return tmpMessage
   }
 }
