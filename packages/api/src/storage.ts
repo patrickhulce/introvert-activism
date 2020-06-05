@@ -16,7 +16,7 @@ export class LocalApiStore {
     if (!fs.existsSync(path.join(this._localFsPath, 'messages/messages.json'))) {
       // TODO: one big file, or a lot of little small files?
       const singleMsg = {
-        messages: {}, // TODO: map, keyed on uuid?
+        messages: {},
       }
       fs.writeFileSync(
         path.join(this._localFsPath, 'messages/messages.json'),
