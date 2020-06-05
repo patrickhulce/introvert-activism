@@ -36,11 +36,7 @@ export class LocalApiStore {
 
     const file = JSON.parse(fs.readFileSync(this._messagesPath, 'utf8'))
 
-    // Collapse key'd object into array.
-    const messages: any[] = []
-    Object.entries(file.messages).forEach(obj => messages.push(obj[1]))
-
-    return messages
+    return Object.values(file.messages)
   }
 
   /**
