@@ -2,7 +2,7 @@ import express from 'express'
 import {v4 as uuidv4} from 'uuid'
 
 import type * as Api from '../../shared/src/utils/api'
-import {LocalApiStore} from '../src/storage'
+import {LocalApiStore} from './storage'
 
 function makeResponse<T>(payload: T): Api.Response<T> {
   return {
