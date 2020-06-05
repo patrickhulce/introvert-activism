@@ -1,7 +1,10 @@
+import bodyParser from 'body-parser'
 import express from 'express'
+import twilio from 'twilio'
 import {v4 as uuidv4} from 'uuid'
 
 import type * as Api from '../../shared/src/utils/api'
+import {createLogger} from '../../shared/src/utils/logging'
 
 import {LocalApiStore} from './storage'
 
@@ -12,9 +15,24 @@ function makeResponse<T>(payload: T): Api.Response<T> {
   }
 }
 
+const log = createLogger('api:router')
+
+const WEBHOOK_ORIGIN = 'http://649566346461.ngrok.io'
+const SOURCE_NUMBER = process.env.TWILIO_NUMBER || ''
+const TARGET_NUMBER = process.env.TWILIO_TEST_CALL_NUMBER || ''
+
 export function createApiRouter(localPath: string): express.Router {
+  const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_TOKEN)
+
   const router = express.Router()
   const store = new LocalApiStore(localPath)
+
+  router.use(bodyParser.urlencoded({extended: true}))
+
+  router.use((req, res, next) => {
+    log.verbose(req.method, req.path)
+    next()
+  })
 
   router.get('/version', (req, res) => res.json({version: 1}))
 
@@ -83,6 +101,47 @@ export function createApiRouter(localPath: string): express.Router {
       return
     }
     res.status(204).end()
+  })
+
+  router.post('/webhooks/initiate-call', (req, res) => {
+    const callId = req.body && req.body.CallSid
+    log.info('twilio call received', callId)
+    const response = new twilio.twiml.VoiceResponse()
+    response.say('About to redirect you')
+    response.dial().conference(
+      {
+        startConferenceOnEnter: true,
+        endConferenceOnExit: true,
+        statusCallback: `${WEBHOOK_ORIGIN}/api/webhooks/conference-status`,
+        statusCallbackEvent: ['start', 'join'],
+      },
+      'testconference',
+    )
+    res.set('Content-Type', 'text/xml')
+    res.send(response.toString())
+  })
+
+  router.post('/webhooks/conference-status', async (req, res) => {
+    log.info(req.body)
+    if (req.body.SequenceNumber !== '1') return res.sendStatus(204)
+
+    const call = await client
+      .conferences(req.body.ConferenceSid)
+      .participants.create({from: SOURCE_NUMBER, to: TARGET_NUMBER})
+
+    setTimeout(() => {
+      log.info('live update say')
+      call.update({announceUrl: `${WEBHOOK_ORIGIN}/api/webhooks/conference-update`})
+    }, 30000)
+
+    res.sendStatus(204)
+  })
+
+  router.post('/webhooks/conference-update', async (req, res) => {
+    const response = new twilio.twiml.VoiceResponse()
+    response.say('I can do live updates too')
+    res.set('Content-Type', 'text/xml')
+    res.send(response.toString())
   })
 
   return router
