@@ -12,7 +12,8 @@ app.once('ready', async () => {
   log.info('app is ready')
   initIpcRouter()
   const serverWorker = await createWorker<ServerWorker>(ComlinkTarget.ServerWorker)
-  const {port} = await serverWorker.startServer()
+
+  const {port} = await serverWorker.startServer(app.getPath('userData'))
 
   const window = new BrowserWindow({
     show: false,
