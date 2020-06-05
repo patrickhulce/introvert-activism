@@ -3,6 +3,8 @@
 import Meyda from 'meyda'
 import * as React from 'react'
 
+import type * as Api from '../../../shared/src/utils/api'
+
 type MediaRecorder = any // TODO
 
 const getMedia = async (constraints: MediaStreamConstraints) => {
@@ -13,7 +15,7 @@ const getMedia = async (constraints: MediaStreamConstraints) => {
   }
 }
 
-function useRecorder(recorder) {
+function useRecorder(recorder): [boolean, any] {
   const [recording, setRecording] = React.useState(false)
 
   React.useEffect(() => {
@@ -39,7 +41,6 @@ const useMeydaAnalyser = (stream, recording) => {
     const audioContext = new AudioContext()
 
     const source = audioContext.createMediaStreamSource(stream)
-    console.log('...')
     analyzer = Meyda.createMeydaAnalyzer({
       audioContext,
       source,
@@ -103,16 +104,41 @@ export const RecordMessageScreen = () => {
 
   const features = useMeydaAnalyser(mediaStream.current, recording)
   React.useEffect(() => {
-    console.log(features)
     if (levelRange.current && features) {
       levelRange.current.value = features.rms
     }
   }, [features])
 
-  const handleClick = async () => {
+  const handleToggleRecording = async () => {
     if (!mediaRecorder.current) await getMediaRecorder()
     // @ts-ignore ?
     setRecording(recording => !recording)
+  }
+
+  const handleSave = async () => {
+    if (!mediaChunks.current.length) return
+    const blob = new Blob(mediaChunks.current, {type: 'audio/ogg; codecs=opus'})
+
+    const params = JSON.stringify({
+      // TODO
+      display_name: 'message name',
+    })
+    const response = (await (
+      await fetch('/api/messages', {
+        method: 'POST',
+        body: params,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+    ).json()) as Api.ResponseTypes['Message']
+    const message = response.payload.message
+
+    // TODO doesnt work yet
+    await fetch(`/api/messages/${message.uuid}/audio`, {
+      method: 'POST',
+      body: blob,
+    })
   }
 
   return (
@@ -121,7 +147,10 @@ export const RecordMessageScreen = () => {
       <textarea rows={20} cols={50}>
         Write your script here so you can read as you record.
       </textarea>
-      <button onClick={handleClick}>{!recording ? 'Start' : 'Stop'} Recording</button>
+      <button onClick={handleToggleRecording}>{recording ? 'Stop' : 'Start'} Recording</button>
+      <button disabled={recording} onClick={handleSave}>
+        Save
+      </button>
       <audio ref={audio} controls></audio>
       <input
         ref={levelRange}
