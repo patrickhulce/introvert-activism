@@ -28,7 +28,7 @@ export class LocalApiStore {
     createLogger('info').info(`Using local fs dir: ${this._localFsPath}`)
   }
 
-  getMessages() {
+  getMessages(): Array<Api.Message> {
     // Parse the messages file.
     if (!fs.existsSync(this._messagesPath)) {
       throw new Error('Not Found')
