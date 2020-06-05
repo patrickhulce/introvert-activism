@@ -2,6 +2,7 @@ import express from 'express'
 import {v4 as uuidv4} from 'uuid'
 
 import type * as Api from '../../shared/src/utils/api'
+
 import {LocalApiStore} from './storage'
 
 function makeResponse<T>(payload: T): Api.Response<T> {
@@ -24,10 +25,6 @@ export function createApiRouter(localPath: string): express.Router {
     )
   })
 
-<<<<<<< HEAD
-  router.post('/messages', (req, res) => {
-    res.status(201).end()
-=======
   router.post('/messages', async (req, res) => {
     // Generate a uuid.
     const uuid = uuidv4()
@@ -44,20 +41,30 @@ export function createApiRouter(localPath: string): express.Router {
     res.status(201).json(
       makeResponse<Api.MessagePayload>({message}),
     )
->>>>>>> master
   })
 
-  router.get('/messages/:messageId', (req, res) => {
+  router.get('/messages/:messageId', async (req, res) => {
     const messageId = req.params.messageId
-    // Fake response.
-    const message = {uuid: messageId, display_name: 'Message 1', file_path: '', duration: 21}
+    const message = await store.getMessage(messageId)
+    if (!message) {
+      res.status(404).end()
+      return
+    }
     res.json(
       makeResponse<Api.MessagePayload>({message}),
     )
   })
 
-  router.put('/messages/:messageId', (req, res) => {
-    res.status(204).end()
+  router.put('/messages/:messageId', async (req, res) => {
+    const messageId = req.params.messageId
+    // Remove uneditable content if exists.
+    const body = req.body
+    delete body.uuid
+
+    const message = await store.putMessage(messageId, body)
+    res.status(200).json(
+      makeResponse<Api.MessagePayload>({message}),
+    )
   })
 
   router.get('/messages/:messageId/audio', (req, res) => {
@@ -69,7 +76,12 @@ export function createApiRouter(localPath: string): express.Router {
     res.status(204).end()
   })
 
-  router.delete('/messages/:messageId', (req, res) => {
+  router.delete('/messages/:messageId', async (req, res) => {
+    const del = await store.deleteMessage(req.params.messageId)
+    if (!del) {
+      res.status(500).end()
+      return
+    }
     res.status(204).end()
   })
 
