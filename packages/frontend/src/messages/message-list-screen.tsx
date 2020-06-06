@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import type * as Api from '../../../shared/src/utils/api'
 
-export const MessageList = () => {
+export const MessageList = (): JSX.Element => {
   const [data, setData] = React.useState<Api.MessagesPayload>({
     messages: [],
   })

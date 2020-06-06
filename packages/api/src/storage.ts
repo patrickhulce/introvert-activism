@@ -47,9 +47,9 @@ export class LocalApiStore {
   /**
    * Get a message.
    * @param uuid UUID of message to delete.
-   * @returns Api.Message or null
+   * @returns
    */
-  getMessage(uuid: string) {
+  getMessage(uuid: string): Api.Message | null {
     // Parse the messages file.
     if (!fs.existsSync(this._messagesPath)) {
       throw new Error('Not Found')
@@ -66,7 +66,7 @@ export class LocalApiStore {
     return message
   }
 
-  postMessage(message: Api.Message) {
+  postMessage(message: Api.Message): void {
     if (!fs.existsSync(this._messagesPath)) {
       throw new Error('Not Found')
     }
@@ -86,7 +86,7 @@ export class LocalApiStore {
    * @param uuid UUID of message to delete.
    * @returns boolean if deleted successfully
    */
-  async deleteMessage(uuid: string) {
+  async deleteMessage(uuid: string): Promise<boolean> {
     if (!fs.existsSync(this._messagesPath)) {
       throw new Error('Not Found')
     }
@@ -113,7 +113,7 @@ export class LocalApiStore {
     return true
   }
 
-  putMessage(messageId: string, message: Api.Message) {
+  putMessage(messageId: string, message: Api.Message): Api.Message | undefined {
     if (!fs.existsSync(this._messagesPath)) {
       throw new Error('Not Found')
     }
@@ -135,7 +135,7 @@ export class LocalApiStore {
     return tmpMessage
   }
 
-  async getAudio(messageId: string) {
+  async getAudio(messageId: string): Promise<Buffer | undefined> {
     const message = await this.getMessage(messageId)
     if (!message) {
       return // TODO: error handle
@@ -145,14 +145,14 @@ export class LocalApiStore {
       return // TODO: error handle
     }
 
-    const audio = fs.readFileSync(path.join(this._audioDir, filePath), 'utf8')
+    const audio = fs.readFileSync(path.join(this._audioDir, filePath))
     if (!audio) {
       return // TODO: error handle
     }
     return audio
   }
 
-  async putAudio(messageId: string, audio: Api.AudioFile) {
+  async putAudio(messageId: string, audio: Buffer): Promise<void> {
     const messages = JSON.parse(fs.readFileSync(this._messagesPath, 'utf8'))
 
     // Get our message to the messages array.
@@ -162,7 +162,7 @@ export class LocalApiStore {
     }
     // Set file_path
     tmpMessage.file_path = tmpMessage.uuid + '.ogg'
-    fs.writeFileSync(path.join(this._audioDir, tmpMessage.file_path), audio.data)
+    fs.writeFileSync(path.join(this._audioDir, tmpMessage.file_path), audio)
 
     // Rewrite the message
     messages.messages[messageId] = tmpMessage

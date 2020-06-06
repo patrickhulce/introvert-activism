@@ -89,9 +89,7 @@ export function createApiRouter(localPath: string): express.Router {
     if (!audio) {
       res.status(404).end()
     }
-    res.status(200).json(
-      makeResponse<Api.AudioPayload>({audio: {data: audio || ''}}),
-    )
+    res.status(200).set('content-type', 'audio/ogg').send(audio)
   })
 
   router.put('/messages/:messageId/audio', async (req, res) => {

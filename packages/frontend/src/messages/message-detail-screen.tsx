@@ -1,3 +1,3 @@
 import * as React from 'react'
 
-export const MessageDetail = () => <h1>MessageDetail</h1>
+export const MessageDetail = (): JSX.Element => <h1>MessageDetail</h1>

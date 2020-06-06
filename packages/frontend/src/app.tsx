@@ -7,7 +7,7 @@ import {MessageList} from './messages/message-list-screen'
 import {RecordMessageScreen} from './messages/record-message-screen'
 import {Welcome} from './welcome/welcome-screen'
 
-export const App = () => (
+export const App = (): JSX.Element => (
   <Router>
     <div>
       <Switch>

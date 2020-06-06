@@ -1,3 +1,3 @@
 import * as React from 'react'
 
-export const MakeACall = () => <h1>MakeACall</h1>
+export const MakeACall = (): JSX.Element => <h1>MakeACall</h1>

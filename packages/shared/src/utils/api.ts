@@ -6,7 +6,6 @@ export interface Response<T> {
 export interface ResponseTypes {
   Messages: Response<MessagesPayload>
   Message: Response<MessagePayload>
-  Audio: Response<AudioFile>
 }
 
 export interface Message {
@@ -16,18 +15,10 @@ export interface Message {
   duration: number
 }
 
-export interface AudioFile {
-  data: string
-}
-
 export interface MessagesPayload {
   messages: Message[]
 }
 
 export interface MessagePayload {
   message: Message
-}
-
-export interface AudioPayload {
-  audio: AudioFile
 }

@@ -67,7 +67,7 @@ const useMeydaAnalyser = (
   return features
 }
 
-export const RecordMessageScreen = () => {
+export const RecordMessageScreen = (): JSX.Element => {
   const levelRange = React.useRef<HTMLInputElement | null>(null)
   const audioEl = React.useRef<HTMLAudioElement | null>(null)
 
