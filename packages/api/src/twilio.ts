@@ -80,7 +80,7 @@ export class TwilioAgent {
     return twilio.validateExpressRequest(req, process.env.TWILIO_TOKEN || '')
   }
 
-  public async registerCallCode(callRecord: Omit<CallRecord, 'callCode'>): Promise<{code: number}> {
+  public async createCallRecord(callRecord: Omit<CallRecord, 'callCode'>): Promise<CallRecord> {
     if (this._callsByCode.size > 50000) throw new Error('Capacity exceeded')
     const existing = this._callsByMessageId.get(callRecord.messageId)
     if (existing && existing.jwt !== callRecord.jwt) throw new Error('Message collision')
@@ -91,7 +91,7 @@ export class TwilioAgent {
     const call = {...callRecord, callCode: code}
     this._callsByCode.set(code, call)
     this._callsByMessageId.set(callRecord.messageId, call)
-    return {code}
+    return call
   }
 
   public async confirmCallCode(code: string | number): Promise<CallRecord | undefined> {

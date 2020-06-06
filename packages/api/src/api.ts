@@ -25,7 +25,7 @@ export function createApiRouter(localPath: string): express.Router {
   const store = new LocalApiStore(localPath)
 
   router.use((req, res, next) => {
-    log.verbose(req.method, req.path)
+    log.verbose('[recv]', req.method, req.path)
     next()
   })
 
@@ -116,13 +116,31 @@ export function createApiRouter(localPath: string): express.Router {
   // Phase 5 - User presses play on their spiel (user)
   // Phase 6 - POST /calls/:id/instruction with the message id and play/pause (app)
   // Phase 7 - use the JWT (server)
-  router.post('/remote/calls', async (req, res) => {})
+  router.post('/remote/calls', async (req, res) => {
+    const {jwt, targetNumber, messageId, messageAudioBase64} = req.body
+    const callRecord = await twilio.createCallRecord({
+      jwt,
+      targetNumber: process.env.TWILIO_TEST_CALL_NUMBER || targetNumber,
+      messageId,
+      messageAudio: Buffer.from(messageAudioBase64, 'base64'),
+      storedAt: new Date(),
+    })
+
+    log.info(`created call record ${callRecord.callCode}`)
+    res.json({callCode: callRecord.callCode})
+  })
+
   router.post('/remote/calls/speak', async (req, res) => {
-    const callCode = req.body.callCode
+    const {callCode, jwt} = req.body
+    const callRecord = await twilio.confirmCallCode(callCode)
+    if (!callRecord || callRecord.jwt !== jwt) return res.sendStatus(204)
+    log.info(`playing message in call ${callCode}`)
     await twilio.playMessageInConference(
       Number(callCode),
       `${PUBLIC_ORIGIN}/api/webhooks/conference-update/${callCode}`,
     )
+
+    res.sendStatus(204)
   })
 
   router.post('/webhooks/initiate-call', (req, res) => {
@@ -170,6 +188,7 @@ export function createApiRouter(localPath: string): express.Router {
     const callCode = req.params.callCode
     const callRecord = await twilio.confirmCallCode(callCode)
     if (!callRecord) return res.sendStatus(500)
+    res.set('Content-Type', 'audio/ogg')
     res.send(callRecord.messageAudio)
   })
 
