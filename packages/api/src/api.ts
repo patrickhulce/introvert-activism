@@ -1,12 +1,14 @@
 import bodyParser from 'body-parser'
 import express from 'express'
-import twilio from 'twilio'
 import {v4 as uuidv4} from 'uuid'
 
 import type * as Api from '../../shared/src/utils/api'
 import {createLogger} from '../../shared/src/utils/logging'
 
 import {LocalApiStore} from './storage'
+import {TwilioAgent} from './twilio'
+
+const PUBLIC_ORIGIN = 'http://649566346461.ngrok.io'
 
 function makeResponse<T>(payload: T): Api.Response<T> {
   return {
@@ -17,12 +19,8 @@ function makeResponse<T>(payload: T): Api.Response<T> {
 
 const log = createLogger('api:router')
 
-const WEBHOOK_ORIGIN = 'http://649566346461.ngrok.io'
-const SOURCE_NUMBER = process.env.TWILIO_NUMBER || ''
-const TARGET_NUMBER = process.env.TWILIO_TEST_CALL_NUMBER || ''
-
 export function createApiRouter(localPath: string): express.Router {
-  const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_TOKEN)
+  const twilio = new TwilioAgent()
 
   const router = express.Router()
   const store = new LocalApiStore(localPath)
@@ -112,45 +110,71 @@ export function createApiRouter(localPath: string): express.Router {
     return
   })
 
-  router.post('/webhooks/initiate-call', (req, res) => {
-    const callId = req.body && req.body.CallSid
-    log.info('twilio call received', callId)
-    const response = new twilio.twiml.VoiceResponse()
-    response.say('About to redirect you')
-    response.dial().conference(
-      {
-        startConferenceOnEnter: true,
-        endConferenceOnExit: true,
-        statusCallback: `${WEBHOOK_ORIGIN}/api/webhooks/conference-status`,
-        statusCallbackEvent: ['start', 'join'],
-      },
-      'testconference',
+  // JWT is sent as auth token for all service API calls
+  // Phase 1 - Trade a JWT token+senator number+message for a call code (app POST /calls)
+  // Phase 2 - Call the twilio number (user)
+  // Phase 3 - Collect the call code from the user (server)
+  //           Lookup the JWT token for the call code, bail if not found
+  //           Associate JWT with the Twilio CallId and viceversa
+  // Phase 4 - Create a conference call with the senator from the POST /calls call (server)
+  // Phase 5 - User presses play on their spiel (user)
+  // Phase 6 - POST /calls/:id/instruction with the message id and play/pause (app)
+  // Phase 7 - use the JWT (server)
+  router.post('/remote/calls', async (req, res) => {})
+  router.post('/remote/calls/speak', async (req, res) => {
+    const callCode = req.body.callCode
+    await twilio.playMessageInConference(
+      Number(callCode),
+      `${PUBLIC_ORIGIN}/api/webhooks/conference-update/${callCode}`,
     )
-    res.set('Content-Type', 'text/xml')
-    res.send(response.toString())
   })
 
-  router.post('/webhooks/conference-status', async (req, res) => {
-    log.info(req.body)
+  router.post('/webhooks/initiate-call', (req, res) => {
+    const number = req.body.From
+    const callId = req.body.CallSid
+    log.info(`twilio call received from ${number} (${callId})`)
+    res.set('Content-Type', 'text/xml')
+    res.send(TwilioAgent.twimlPromptForCallCode(`${PUBLIC_ORIGIN}/api/webhooks/confirm-code`).twiml)
+  })
+
+  router.post('/webhooks/confirm-code', async (req, res) => {
+    const number = req.body.From
+    const code = req.body.Digits
+    log.info(`twilio confirmation code received from ${number} - ${code}`)
+    const callRecord = await twilio.confirmCallCode(code)
+    const {twiml} = callRecord
+      ? TwilioAgent.twimlCreateConferenceCall(
+          `${PUBLIC_ORIGIN}/api/webhooks/conference-status/${callRecord.callCode}`,
+          code,
+        )
+      : TwilioAgent.twimlHangup()
+    res.set('Content-Type', 'text/xml')
+    res.send(twiml)
+  })
+
+  router.post('/webhooks/conference-status/:callCode', async (req, res) => {
+    log.info(`twilio conference status update ${req.body.StatusCallbackEvent}`)
     if (req.body.SequenceNumber !== '1') return res.sendStatus(204)
 
-    const call = await client
-      .conferences(req.body.ConferenceSid)
-      .participants.create({from: SOURCE_NUMBER, to: TARGET_NUMBER})
-
-    setTimeout(() => {
-      log.info('live update say')
-      call.update({announceUrl: `${WEBHOOK_ORIGIN}/api/webhooks/conference-update`})
-    }, 30000)
-
+    await twilio.connectConferenceToNumber(req.body.ConferenceSid, Number(req.params.callCode))
     res.sendStatus(204)
   })
 
-  router.post('/webhooks/conference-update', async (req, res) => {
-    const response = new twilio.twiml.VoiceResponse()
-    response.say('I can do live updates too')
+  router.post('/webhooks/conference-update/:callCode', async (req, res) => {
+    const callCode = req.params.callCode
+    const callRecord = await twilio.confirmCallCode(callCode)
+    if (!callRecord) return res.sendStatus(500)
     res.set('Content-Type', 'text/xml')
-    res.send(response.toString())
+    res.send(
+      TwilioAgent.twimlPlayAudioFile(`${PUBLIC_ORIGIN}/api/webhooks/audio-file/${callCode}`).twiml,
+    )
+  })
+
+  router.get('/webhooks/audio-file/:callCode', async (req, res) => {
+    const callCode = req.params.callCode
+    const callRecord = await twilio.confirmCallCode(callCode)
+    if (!callRecord) return res.sendStatus(500)
+    res.send(callRecord.messageAudio)
   })
 
   return router
