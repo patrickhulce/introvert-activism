@@ -78,6 +78,7 @@ export function createApiRouter(localPath: string): express.Router {
     delete body.uuid
 
     const message = await store.putMessage(messageId, body)
+    if (!message) return res.sendStatus(404)
     res.status(200).json(
       makeResponse<Api.MessagePayload>({message}),
     )
