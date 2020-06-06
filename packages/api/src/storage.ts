@@ -1,3 +1,4 @@
+import {spawn} from 'child_process'
 import fs from 'fs'
 import path from 'path'
 
@@ -160,9 +161,31 @@ export class LocalApiStore {
     if (!tmpMessage) {
       throw new Error(`Could not find message with id ${messageId}`)
     }
+
     // Set file_path
-    tmpMessage.file_path = tmpMessage.uuid + '.ogg'
-    fs.writeFileSync(path.join(this._audioDir, tmpMessage.file_path), audio)
+    const originalFilePath = `${tmpMessage.uuid}.webm`
+    const mp3FilePath = `${tmpMessage.uuid}.mp3`
+    tmpMessage.file_path = mp3FilePath
+    fs.writeFileSync(path.join(this._audioDir, originalFilePath), audio)
+
+    await new Promise((resolve, reject) => {
+      const convertProcess = spawn(
+        'ffmpeg',
+        [
+          ...['-i', originalFilePath], // use the .webm file as input
+          '-vn', // disable video
+          ...['-ab', '64k'], // use 64kbps bitrate
+          ...['-ar', '44100'], // use 44.1KHz
+          mp3FilePath, // output to this mp3 file
+        ],
+        {cwd: this._audioDir},
+      )
+
+      convertProcess.once('exit', code => {
+        if (code === 0) resolve()
+        else reject(new Error(`ffmpeg exited with code ${code}`))
+      })
+    })
 
     // Rewrite the message
     messages.messages[messageId] = tmpMessage

@@ -103,7 +103,7 @@ export const RecordMessageScreen = (): JSX.Element => {
       audioEl.current.src = ''
       mediaChunks.current = []
     } else {
-      const blob = new Blob(mediaChunks.current, {type: 'audio/ogg; codecs=opus'})
+      const blob = new Blob(mediaChunks.current, {type: 'audio/webm; codecs=opus'})
       audioEl.current.src = URL.createObjectURL(blob)
     }
   }, [recording])
@@ -124,7 +124,7 @@ export const RecordMessageScreen = (): JSX.Element => {
 
   const handleSave = async () => {
     if (!mediaChunks.current.length) return
-    const blob = new Blob(mediaChunks.current, {type: 'audio/ogg; codecs=opus'})
+    const blob = new Blob(mediaChunks.current, {type: 'audio/webm; codecs=opus'})
 
     const params = JSON.stringify({
       // TODO
@@ -143,7 +143,7 @@ export const RecordMessageScreen = (): JSX.Element => {
 
     await fetch(`/api/messages/${message.uuid}/audio`, {
       method: 'PUT',
-      headers: {'content-type': 'audio/ogg'},
+      headers: {'content-type': 'audio/webm'},
       body: blob,
     })
   }

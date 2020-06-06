@@ -87,7 +87,7 @@ export function createApiRouter(localPath: string): express.Router {
     if (!audio) {
       res.status(404).end()
     }
-    res.status(200).set('content-type', 'audio/ogg').send(audio)
+    res.status(200).set('content-type', 'audio/mpeg').send(audio)
   })
 
   router.put('/messages/:messageId/audio', async (req, res) => {
@@ -188,7 +188,7 @@ export function createApiRouter(localPath: string): express.Router {
     const callCode = req.params.callCode
     const callRecord = await twilio.confirmCallCode(callCode)
     if (!callRecord) return res.sendStatus(500)
-    res.set('Content-Type', 'audio/ogg')
+    res.set('Content-Type', 'audio/mpeg')
     res.send(callRecord.messageAudio)
   })
 

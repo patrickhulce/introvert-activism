@@ -8,10 +8,16 @@ App (currently Mac + Windows) that allows you to prerecord your message to your 
 
 You want to support Black Lives Matter, PPE for healthcare workers, < YOUR CAUSE HERE > by making your voice heard, but you're not yet comfortable on the phone speaking your mind or don't know where to start.
 
-## Build
+## Install Dependencies
 
 ```bash
 yarn
+brew install ffmpeg
+```
+
+## Build
+
+```bash
 yarn build
 ```
 
@@ -20,7 +26,6 @@ yarn build
 In one terminal...
 
 ```bash
-yarn
 yarn build:watch
 ```
 
