@@ -19,7 +19,9 @@ async function startServer(localFilePath: string): Promise<{port: number; close(
   const app = express()
   const router = createApiRouter(localFilePath)
 
-  app.use(bodyParser.json())
+  app.use(bodyParser.json({limit: '10mb'}))
+  app.use(bodyParser.urlencoded({extended: true}))
+  app.use(bodyParser.raw({type: 'audio/*', limit: '10mb'}))
 
   app.use('/static', express.static(findFrontendDirectory()))
   app.use('/api', router)

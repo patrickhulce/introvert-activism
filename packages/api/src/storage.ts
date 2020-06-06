@@ -158,7 +158,7 @@ export class LocalApiStore {
     // Get our message to the messages array.
     const tmpMessage = messages.messages[messageId]
     if (!tmpMessage) {
-      return // TODO: error handle
+      throw new Error(`Could not find message with id ${messageId}`)
     }
     // Set file_path
     tmpMessage.file_path = tmpMessage.uuid + '.ogg'

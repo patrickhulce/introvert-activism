@@ -1,4 +1,3 @@
-import bodyParser from 'body-parser'
 import express from 'express'
 import {v4 as uuidv4} from 'uuid'
 
@@ -24,8 +23,6 @@ export function createApiRouter(localPath: string): express.Router {
 
   const router = express.Router()
   const store = new LocalApiStore(localPath)
-
-  router.use(bodyParser.urlencoded({extended: true}))
 
   router.use((req, res, next) => {
     log.verbose(req.method, req.path)

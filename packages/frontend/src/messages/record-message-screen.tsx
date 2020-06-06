@@ -141,9 +141,9 @@ export const RecordMessageScreen = (): JSX.Element => {
     ).json()) as Api.ResponseTypes['Message']
     const message = response.payload.message
 
-    // TODO doesnt work yet
     await fetch(`/api/messages/${message.uuid}/audio`, {
-      method: 'POST',
+      method: 'PUT',
+      headers: {'content-type': 'audio/ogg'},
       body: blob,
     })
   }
