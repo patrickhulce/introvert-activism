@@ -13,7 +13,9 @@ interface CallRecord {
   messageAudio: Buffer
   storedAt: Date
 
-  twilioCall?: import('twilio/lib/rest/api/V2010/account/conference/participant').ParticipantInstance
+  twilioParticipants?: Array<
+    import('twilio/lib/rest/api/V2010/account/conference/participant').ParticipantInstance
+  >
 }
 
 export class TwilioAgent {
@@ -104,10 +106,15 @@ export class TwilioAgent {
     if (code !== callCode) throw new Error(`Code for conference ${code} did not match ${callCode}`)
     const callRecord = this._callsByCode.get(code)
     if (!callRecord) throw new Error(`Could not find call for code ${code}`)
-    const call = await this._client
-      .conferences(conferenceId)
-      .participants.create({from: SOURCE_NUMBER, to: TARGET_NUMBER || callRecord.targetNumber})
-    callRecord.twilioCall = call
+    const targetCall = await this._client.conferences(conferenceId).participants.create({
+      from: SOURCE_NUMBER,
+      to: TARGET_NUMBER || callRecord.targetNumber,
+      endConferenceOnExit: true,
+    })
+
+    const calls = await this._client.conferences(conferenceId).participants.list()
+    if (calls.some(p => p.callSid !== targetCall.callSid)) calls.push(targetCall)
+    callRecord.twilioParticipants = calls
   }
 
   public async playMessageInConference(
@@ -116,7 +123,11 @@ export class TwilioAgent {
   ): Promise<void> {
     const callRecord = this._callsByCode.get(callCode)
     if (!callRecord) throw new Error(`Could not find call for code ${callCode}`)
-    if (!callRecord.twilioCall) throw new Error(`No twilio call for ${callRecord.callCode}`)
-    await callRecord.twilioCall.update({announceUrl: conferenceUpdateUrl})
+    if (!callRecord.twilioParticipants) throw new Error(`No twilio call for ${callRecord.callCode}`)
+    await Promise.all(
+      callRecord.twilioParticipants.map(participant =>
+        participant.update({announceUrl: conferenceUpdateUrl}),
+      ),
+    )
   }
 }
