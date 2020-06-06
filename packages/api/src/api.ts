@@ -25,7 +25,14 @@ export function createApiRouter(localPath: string): express.Router {
   const store = new LocalApiStore(localPath)
 
   router.use((req, res, next) => {
-    log.verbose('[recv]', req.method, req.path)
+    const start = Date.now()
+    log.verbose('⇨', req.method, req.originalUrl)
+    res.once('finish', () => {
+      let logFn = log.info
+      if (res.statusCode >= 400) logFn = log.warn
+      if (res.statusCode >= 500) logFn = log.error
+      logFn('⇦', req.method, req.originalUrl, res.statusCode, `${Date.now() - start}ms`)
+    })
     next()
   })
 
