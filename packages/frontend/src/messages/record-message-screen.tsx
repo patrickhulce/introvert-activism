@@ -76,23 +76,21 @@ export const RecordMessageScreen = (): JSX.Element => {
   const mediaChunks = React.useRef<Blob[]>([])
 
   const getMediaStream = React.useCallback(async () => {
-    mediaStream.current = await getMedia({
+    return (mediaStream.current = await getMedia({
       audio: true,
       video: false,
-    })
+    }))
   }, [])
 
   const getMediaRecorder = React.useCallback(async () => {
-    if (!mediaStream.current) await getMediaStream()
-
     // @ts-ignore
-    const recorder = new MediaRecorder(mediaStream.current)
+    const recorder = new MediaRecorder(await getMediaStream())
     recorder.ondataavailable = (e: any) => {
       mediaChunks.current.push(e.data)
     }
     recorder.onerror = console.error
-    mediaRecorder.current = recorder
-  }, [mediaStream.current])
+    return (mediaRecorder.current = recorder)
+  }, [getMediaStream])
 
   const [recording, setRecording] = useRecorder(mediaRecorder.current)
 
@@ -110,7 +108,6 @@ export const RecordMessageScreen = (): JSX.Element => {
 
   const features = useMeydaAnalyser(mediaStream.current, recording)
   React.useEffect(() => {
-    console.log(features)
     if (levelRange.current && features && features.rms) {
       levelRange.current.value = features.rms.toString()
     }
