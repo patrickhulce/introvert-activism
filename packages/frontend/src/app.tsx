@@ -34,6 +34,7 @@ const useStyles = makeStyles((theme: Theme) =>
     routeContent: {
       paddingLeft: theme.spacing(3),
       paddingRight: theme.spacing(3),
+      height: 'calc(100% - 65px)',
     },
     menuButton: {
       marginRight: theme.spacing(2),
