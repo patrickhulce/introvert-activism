@@ -22,6 +22,7 @@ import {MakeACall} from './call/call-screen'
 import {MessageDetail} from './messages/message-detail-screen'
 import {MessageList} from './messages/message-list-screen'
 import {RecordMessageScreen} from './messages/record-message-screen'
+import {SettingsScreen} from './settings/settings-screen'
 import {Welcome} from './welcome/welcome-screen'
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -108,13 +109,14 @@ export const App = (): JSX.Element => {
         <Drawer anchor="left" open={sidebarIsOpen} onClose={() => setSidebarIsOpen(false)}>
           <NavLinks closeMenu={() => setSidebarIsOpen(false)} />
         </Drawer>
-        <div>
+        <div className={classes.routeContent}>
           <Switch>
             <Route exact path="/welcome" component={Welcome} />
             <Route exact path="/record" component={RecordMessageScreen} />
             <Route exact path="/messages" component={MessageList} />
             <Route exact path="/messages/:id" component={MessageDetail} />
             <Route exact path="/call" component={MakeACall} />
+            <Route exact path="/settings" component={SettingsScreen} />
             <Redirect to="/welcome" />
           </Switch>
         </div>
