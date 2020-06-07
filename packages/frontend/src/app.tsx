@@ -21,7 +21,7 @@ import {HashRouter as Router, Redirect, Route, Switch, Link as RouterLink} from 
 import {MakeACall} from './call/call-screen'
 import {MessageDetail} from './messages/message-detail-screen'
 import {MessageList} from './messages/message-list-screen'
-import {RecordMessageScreen} from './messages/record-message-screen'
+import {RecordMessageScreen} from './messages/new-message-screen'
 import {SettingsScreen} from './settings/settings-screen'
 import {Welcome} from './welcome/welcome-screen'
 

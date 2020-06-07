@@ -7,6 +7,7 @@ import ListItem from '@material-ui/core/ListItem'
 import ListItemAvatar from '@material-ui/core/ListItemAvatar'
 import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction'
 import ListItemText from '@material-ui/core/ListItemText'
+import AddIcon from '@material-ui/icons/Add'
 import CallIcon from '@material-ui/icons/Call'
 import DeleteIcon from '@material-ui/icons/Delete'
 import {Link as RouterLink} from 'react-router-dom'
@@ -53,6 +54,14 @@ export const MessageList = (): JSX.Element => {
               </ListItem>
             )
           })}
+          <ListItem button component={RouterLink} to={`/record`}>
+            <ListItemAvatar>
+              <Avatar>
+                <AddIcon />
+              </Avatar>
+            </ListItemAvatar>
+            <ListItemText primary="Record a new message" secondary="Creates a new message." />
+          </ListItem>
         </List>
       </div>
     </>
