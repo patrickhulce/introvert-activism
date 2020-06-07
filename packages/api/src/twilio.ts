@@ -1,13 +1,14 @@
 import _ from 'lodash'
 import twilio from 'twilio'
 
-const SOURCE_NUMBER = process.env.TWILIO_NUMBER || ''
-const TARGET_NUMBER = process.env.TWILIO_TEST_CALL_NUMBER || ''
+const TWILIO_NUMBER = process.env.TWILIO_NUMBER || ''
+const TARGET_NUMBER_OVERRIDE = process.env.TWILIO_TEST_CALL_NUMBER || ''
 
 interface CallRecord {
   jwt: string
   callCode: number
   sourceNumber?: string
+  twilioNumber: string
   targetNumber: string
   messageId: string
   messageAudio: Buffer
@@ -82,7 +83,9 @@ export class TwilioAgent {
     return twilio.validateExpressRequest(req, process.env.TWILIO_TOKEN || '')
   }
 
-  public async createCallRecord(callRecord: Omit<CallRecord, 'callCode'>): Promise<CallRecord> {
+  public async createCallRecord(
+    callRecord: Omit<CallRecord, 'callCode' | 'twilioNumber'>,
+  ): Promise<CallRecord> {
     if (this._callsByCode.size > 50000) throw new Error('Capacity exceeded')
     const existing = this._callsByMessageId.get(callRecord.messageId)
     if (existing && existing.jwt !== callRecord.jwt) throw new Error('Message collision')
@@ -90,10 +93,18 @@ export class TwilioAgent {
     let code = _.random(10000, 99999)
     while (this._callsByCode.has(code)) code = _.random(10000, 99999)
 
-    const call = {...callRecord, callCode: code}
+    const call = {...callRecord, callCode: code, twilioNumber: TWILIO_NUMBER}
     this._callsByCode.set(code, call)
     this._callsByMessageId.set(callRecord.messageId, call)
     return call
+  }
+
+  public async destroyCallRecord(callCode: string | number): Promise<void> {
+    const existing = this._callsByCode.get(Number(callCode))
+    if (!existing) return
+
+    this._callsByCode.delete(existing.callCode)
+    this._callsByMessageId.delete(existing.messageId)
   }
 
   public async confirmCallCode(code: string | number): Promise<CallRecord | undefined> {
@@ -107,14 +118,19 @@ export class TwilioAgent {
     const callRecord = this._callsByCode.get(code)
     if (!callRecord) throw new Error(`Could not find call for code ${code}`)
     const targetCall = await this._client.conferences(conferenceId).participants.create({
-      from: SOURCE_NUMBER,
-      to: TARGET_NUMBER || callRecord.targetNumber,
+      from: TWILIO_NUMBER,
+      to: TARGET_NUMBER_OVERRIDE || callRecord.targetNumber,
       endConferenceOnExit: true,
     })
 
     const calls = await this._client.conferences(conferenceId).participants.list()
-    if (calls.some(p => p.callSid !== targetCall.callSid)) calls.push(targetCall)
+    if (!calls.some(p => p.callSid === targetCall.callSid)) calls.push(targetCall)
     callRecord.twilioParticipants = calls
+
+    const sourceParticipant = calls.find(p => p.callSid !== targetCall.callSid)
+    if (!sourceParticipant) return
+    const sourceCall = await this._client.calls.get(sourceParticipant.callSid).fetch()
+    callRecord.sourceNumber = sourceCall.from
   }
 
   public async playMessageInConference(

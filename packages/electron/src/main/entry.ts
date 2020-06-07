@@ -17,8 +17,10 @@ app.once('ready', async () => {
 
   const window = new BrowserWindow({
     show: false,
-    minWidth: 600,
-    minHeight: 400,
+    minWidth: 800,
+    minHeight: 600,
+    width: 1080,
+    height: 720,
   })
 
   window.loadURL(`http://localhost:${port}/static/`)

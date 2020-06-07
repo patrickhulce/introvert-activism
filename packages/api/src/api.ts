@@ -167,7 +167,29 @@ export function createApiRouter(localPath: string): express.Router {
       })
 
       log.info(`created call record ${callRecord.callCode}`)
-      res.json({callCode: callRecord.callCode})
+      res.json({callCode: callRecord.callCode, twilioNumber: callRecord.twilioNumber})
+    }),
+  )
+
+  router.get(
+    '/remote/calls/:callCode/status',
+    createHandler(async (req, res) => {
+      const callCode = req.params.callCode
+      const timeout = Number(req.query && req.query.timeout) || 30000
+      const startTime = Date.now()
+
+      let callRecord = undefined
+      while (Date.now() - startTime < timeout) {
+        callRecord = await twilio.confirmCallCode(callCode)
+        if (!callRecord) break
+        if (callRecord.sourceNumber) break
+        await new Promise(r => setTimeout(r, 100))
+      }
+
+      res.json({
+        started: Boolean(callRecord?.sourceNumber),
+        completed: !callRecord,
+      })
     }),
   )
 
@@ -222,6 +244,11 @@ export function createApiRouter(localPath: string): express.Router {
     '/webhooks/conference-status/:callCode',
     createHandler(async (req, res) => {
       log.info(`twilio conference status update ${req.body.StatusCallbackEvent}`)
+      if (req.body.StatusCallbackEvent === 'conference-end') {
+        await twilio.destroyCallRecord(req.params.callCode)
+        return
+      }
+
       if (req.body.SequenceNumber !== '1') return res.sendStatus(204)
 
       await twilio.connectConferenceToNumber(req.body.ConferenceSid, Number(req.params.callCode))

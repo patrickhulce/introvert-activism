@@ -37,7 +37,7 @@ enum Phase {
   GetRepresentative,
   GetMessage,
   Precall,
-  Call,
+  Midcall,
   Postcall,
 }
 
@@ -87,6 +87,10 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     zipcodeButton: {
       marginLeft: theme.spacing(2),
+    },
+    representativeList: {
+      overflow: 'auto',
+      maxHeight: '40vh',
     },
     textAlign: {
       textAlign: 'center',
@@ -159,32 +163,34 @@ const GetRepresentative = (props: ChildProps) => {
       </Typography>
       {errorMessage ? <span>ERROR: {errorMessage}</span> : null}
       {reps ? (
-        <List>
-          {reps
-            .filter(
-              rep => !props.options.representativeId || rep.id === props.options.representativeId,
-            )
-            .map(rep => (
-              <ListItem
-                key={rep.id}
-                button
-                onClick={() =>
-                  props.setOptions({
-                    ...props.options,
-                    representativeId: rep.id,
-                    numberToCall: rep.phone,
-                  })
-                }>
-                <ListItemAvatar>
-                  <Avatar src={rep.photoURL} alt={rep.name}></Avatar>
-                </ListItemAvatar>
-                <ListItemText
-                  primary={`${rep.name} (${rep.party || 'unknown'})`}
-                  secondary={`${rep.reason} - ${rep.phone}`}
-                />
-              </ListItem>
-            ))}
-        </List>
+        <div className={classes.representativeList}>
+          <List>
+            {reps
+              .filter(
+                rep => !props.options.representativeId || rep.id === props.options.representativeId,
+              )
+              .map(rep => (
+                <ListItem
+                  key={rep.id}
+                  button
+                  onClick={() =>
+                    props.setOptions({
+                      ...props.options,
+                      representativeId: rep.id,
+                      numberToCall: rep.phone,
+                    })
+                  }>
+                  <ListItemAvatar>
+                    <Avatar src={rep.photoURL} alt={rep.name}></Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={`${rep.name} (${rep.party || 'unknown'})`}
+                    secondary={`${rep.reason} - ${rep.phone}`}
+                  />
+                </ListItem>
+              ))}
+          </List>
+        </div>
       ) : (
         <span>Loading...</span>
       )}
@@ -245,54 +251,144 @@ const GetMessage = (props: ChildProps) => {
   )
 }
 
-const Call = (props: ChildProps) => {
-  const classes = useStyles()
-  const [callCode, setCallCode] = React.useState('')
+function useCallStatusCallback(
+  props: ChildProps,
+  callCode: string,
+  fn: (payload: {started: boolean; completed: boolean}) => boolean,
+) {
+  React.useEffect(() => {
+    let isDone = false
+    ;(async () => {
+      while (!isDone) {
+        const payload = await fetchJSON<{started: boolean; completed: boolean}>(
+          `/api/remote/calls/${callCode}/status?timeout=10000`,
+        )
+        isDone = fn(payload)
+      }
+    })()
 
-  if (props.phase < Phase.Precall) return <></>
+    return () => {
+      isDone = true
+    }
+  }, [callCode])
+}
+
+const Precall = (props: ChildProps & {twilioNumber: string; callCode: string}) => {
+  const classes = useStyles()
+  useCallStatusCallback(props, props.callCode, payload => {
+    if (payload.started) {
+      props.setPhase(Phase.Midcall)
+      return true
+    }
+
+    return false
+  })
+
   return (
     <div className={classes.containerSection}>
       <Typography variant="h5" className={classes.textAlign}>
-        Make the Call
+        Call {props.twilioNumber} and enter:
       </Typography>
-      <h2>Call code is {callCode}</h2>
-      <button
-        disabled={props.phase !== Phase.Precall}
-        onClick={async () => {
-          const audioResponse = await fetch(`/api/messages/${props.options.messageId}/audio`)
-          const audioBase64 = _arrayBufferToBase64(await audioResponse.arrayBuffer())
-          const createResponse = await fetch(`/api/remote/calls`, {
-            method: 'POST',
-            headers: {'Content-type': 'application/json'},
-            body: JSON.stringify({
-              jwt: 'blacklivesmatter',
-              targetNumber: '+15558675309',
-              messageId: props.options.messageId,
-              messageAudioBase64: audioBase64,
-            }),
-          })
+      <Typography variant="h3" className={classes.textAlign}>
+        {props.callCode}
+      </Typography>
+    </div>
+  )
+}
 
-          setCallCode((await createResponse.json()).callCode)
-          props.setPhase(Phase.Call)
-        }}>
-        Call
-      </button>
-      <button
-        disabled={props.phase !== Phase.Call}
+const Midcall = (props: ChildProps & {callCode: string}) => {
+  const classes = useStyles()
+  useCallStatusCallback(props, props.callCode, payload => {
+    if (payload.completed) {
+      props.setPhase(Phase.Postcall)
+      return true
+    }
+
+    return false
+  })
+
+  return (
+    <div className={classes.containerSection}>
+      <Typography variant="h5" className={classes.textAlign}>
+        Play Your Message
+      </Typography>
+      <Button
+        variant="contained"
+        color="primary"
         onClick={async () => {
           await fetch('/api/remote/calls/speak', {
             method: 'POST',
             headers: {'Content-type': 'application/json'},
             body: JSON.stringify({
               jwt: 'blacklivesmatter',
-              callCode,
+              callCode: props.callCode,
             }),
           })
         }}>
-        Speak
-      </button>
+        Play
+      </Button>
     </div>
   )
+}
+
+const Postcall = (props: ChildProps) => {
+  const classes = useStyles()
+
+  return (
+    <div className={classes.containerSection}>
+      <Typography variant="h5" className={classes.textAlign}>
+        Great job!
+      </Typography>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={() => {
+          props.setOptions({
+            ...props.options,
+            representativeId: '',
+            numberToCall: '',
+            messageId: '',
+          })
+        }}>
+        Make Another Call
+      </Button>
+    </div>
+  )
+}
+
+const Call = (props: ChildProps) => {
+  const [twilioNumber, setTwilioNumber] = React.useState('')
+  const [callCode, setCallCode] = React.useState('')
+
+  React.useEffect(() => {
+    if (props.phase !== Phase.Precall) return
+    ;(async () => {
+      const audioResponse = await fetch(`/api/messages/${props.options.messageId}/audio`)
+      const audioBase64 = _arrayBufferToBase64(await audioResponse.arrayBuffer())
+      const createResponse = await fetch(`/api/remote/calls`, {
+        method: 'POST',
+        headers: {'Content-type': 'application/json'},
+        body: JSON.stringify({
+          jwt: 'blacklivesmatter',
+          targetNumber: '+15558675309',
+          messageId: props.options.messageId,
+          messageAudioBase64: audioBase64,
+        }),
+      })
+
+      const {callCode, twilioNumber} = await createResponse.json()
+      setCallCode(callCode)
+      setTwilioNumber(twilioNumber)
+      props.setPhase(Phase.Midcall)
+    })()
+  }, [props.phase])
+
+  if (props.phase < Phase.Precall) return <></>
+  if (!callCode || !twilioNumber) return <span>Loading...</span>
+
+  if (props.phase === Phase.Midcall) return <Midcall callCode={callCode} {...props} />
+  if (props.phase === Phase.Postcall) return <Postcall {...props} />
+  return <Precall callCode={callCode} twilioNumber={twilioNumber} {...props} />
 }
 
 export const MakeACall = (): JSX.Element => {
@@ -309,7 +405,7 @@ export const MakeACall = (): JSX.Element => {
   if (/^\d{5}$/.test(options.zipcode)) phase = Phase.GetRepresentative
   if (options.numberToCall) phase = Phase.GetMessage
   if (options.messageId) phase = Phase.Precall
-  if (phaseState_ === Phase.Call) phase = phaseState_
+  if (phaseState_ === Phase.Midcall) phase = phaseState_
   if (phaseState_ === Phase.Postcall) phase = phaseState_
 
   const props = {phase, setPhase, options, setOptions}
