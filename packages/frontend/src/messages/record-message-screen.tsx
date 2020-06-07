@@ -1,11 +1,16 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
+import * as React from 'react'
 
 import Meyda from 'meyda'
-import * as React from 'react'
 
 import type * as Api from '../../../shared/src/utils/api'
 
-type MediaRecorder = any // TODO
+type MediaRecorder = any
+
+declare global {
+  interface Window {
+    MediaRecorder: MediaRecorder
+  }
+}
 
 const getMedia = async (constraints: MediaStreamConstraints) => {
   try {
@@ -83,8 +88,7 @@ export const RecordMessageScreen = (): JSX.Element => {
   }, [])
 
   const getMediaRecorder = React.useCallback(async () => {
-    // @ts-ignore
-    const recorder = new MediaRecorder(await getMediaStream())
+    const recorder = new window.MediaRecorder(await getMediaStream())
     recorder.ondataavailable = (e: any) => {
       mediaChunks.current.push(e.data)
     }
@@ -115,7 +119,6 @@ export const RecordMessageScreen = (): JSX.Element => {
 
   const handleToggleRecording = async () => {
     if (!mediaRecorder.current) await getMediaRecorder()
-    // @ts-ignore ?
     setRecording(recording => !recording)
   }
 
