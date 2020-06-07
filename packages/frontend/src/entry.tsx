@@ -1,4 +1,5 @@
 import * as React from 'react'
+
 import {render, unmountComponentAtNode} from 'react-dom'
 
 function getOrCreateDiv(id: string): HTMLElement {

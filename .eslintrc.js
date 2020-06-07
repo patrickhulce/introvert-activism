@@ -27,6 +27,20 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'off',
     'import/no-default-export': 'error',
     'import/no-deprecated': 'error',
-    'import/order': ['error', {'newlines-between': 'always', alphabetize: {order: 'asc'}}],
+    'import/order': [
+      'error',
+      {
+        'newlines-between': 'always',
+        alphabetize: {order: 'asc'},
+        pathGroups: [
+          {
+            pattern: 'react',
+            group: 'builtin',
+            position: 'before',
+          },
+        ],
+        pathGroupsExcludedImportTypes: ['builtin'],
+      },
+    ],
   },
 }
