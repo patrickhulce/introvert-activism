@@ -16,7 +16,7 @@ import HomeIcon from '@material-ui/icons/Home'
 import MenuIcon from '@material-ui/icons/Menu'
 import MessageIcon from '@material-ui/icons/Message'
 import SettingsIcon from '@material-ui/icons/Settings'
-import {HashRouter as Router, Redirect, Route, Switch, Link} from 'react-router-dom'
+import {HashRouter as Router, Redirect, Route, Switch, Link as RouterLink} from 'react-router-dom'
 
 import {MakeACall} from './call/call-screen'
 import {MessageDetail} from './messages/message-detail-screen'
@@ -30,18 +30,18 @@ const useStyles = makeStyles((theme: Theme) =>
       flexGrow: 1,
       height: '100%',
     },
+    routeContent: {
+      paddingLeft: theme.spacing(3),
+      paddingRight: theme.spacing(3),
+    },
     menuButton: {
       marginRight: theme.spacing(2),
     },
     title: {
       flexGrow: 1,
     },
-    navLink: {
-      textDecoration: 'none',
-    },
     navLinkText: {
       paddingRight: theme.spacing(2),
-      color: theme.palette.text.primary,
     },
   }),
 )
@@ -59,12 +59,15 @@ const NavLinks = (props: {closeMenu(): void}) => {
     <List>
       {Pages.map(([label, icon, link]) => {
         return (
-          <Link key={label} to={link} className={classes.navLink} onClick={() => props.closeMenu()}>
-            <ListItem button>
-              <ListItemIcon>{icon}</ListItemIcon>
-              <ListItemText className={classes.navLinkText} primary={label} />
-            </ListItem>
-          </Link>
+          <ListItem
+            key={label}
+            button
+            component={RouterLink}
+            to={link}
+            onClick={() => props.closeMenu()}>
+            <ListItemIcon>{icon}</ListItemIcon>
+            <ListItemText className={classes.navLinkText} primary={label} />
+          </ListItem>
         )
       })}
     </List>
@@ -94,8 +97,10 @@ export const App = (): JSX.Element => {
             <IconButton
               edge="start"
               className={classes.menuButton}
+              component={RouterLink}
               color="inherit"
-              aria-label="menu">
+              aria-label="menu"
+              to="/settings">
               <SettingsIcon />
             </IconButton>
           </Toolbar>
