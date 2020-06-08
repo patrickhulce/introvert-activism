@@ -28,7 +28,7 @@ async function startServer(localFilePath: string): Promise<{port: number; close(
 
   return new Promise(resolve => {
     const server = createServer(app)
-    server.listen(1337, () => {
+    server.listen(8675, () => {
       const address = server.address()
       if (typeof address === 'string' || !address) throw new Error(`Invalid address ${address}`)
       log.info(`app server available on port ${address.port}`)
