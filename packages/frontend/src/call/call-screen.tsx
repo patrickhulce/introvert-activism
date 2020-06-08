@@ -264,6 +264,7 @@ function useCallStatusCallback(
           `/api/remote/calls/${callCode}/status?timeout=10000`,
         )
         isDone = fn(payload)
+        if (!isDone) await new Promise(r => setTimeout(r, 1000))
       }
     })()
 
@@ -298,6 +299,7 @@ const Precall = (props: ChildProps & {twilioNumber: string; callCode: string}) =
 
 const Midcall = (props: ChildProps & {callCode: string}) => {
   const classes = useStyles()
+  const [hasBeenStopped, setHasBeenStopped] = React.useState(false)
   useCallStatusCallback(props, props.callCode, payload => {
     if (payload.completed) {
       props.setPhase(Phase.Postcall)
@@ -315,17 +317,33 @@ const Midcall = (props: ChildProps & {callCode: string}) => {
       <Button
         variant="contained"
         color="primary"
+        disabled={hasBeenStopped}
         onClick={async () => {
-          await fetch('/api/remote/calls/speak', {
+          await fetch(`/api/remote/calls/${props.callCode}/speak`, {
             method: 'POST',
             headers: {'Content-type': 'application/json'},
             body: JSON.stringify({
               jwt: 'blacklivesmatter',
-              callCode: props.callCode,
             }),
           })
         }}>
         Play
+      </Button>
+      <Button
+        variant="contained"
+        color="secondary"
+        disabled={hasBeenStopped}
+        onClick={async () => {
+          setHasBeenStopped(true)
+          await fetch(`/api/remote/calls/${props.callCode}/stop`, {
+            method: 'POST',
+            headers: {'Content-type': 'application/json'},
+            body: JSON.stringify({
+              jwt: 'blacklivesmatter',
+            }),
+          })
+        }}>
+        Stop
       </Button>
     </div>
   )
@@ -379,7 +397,6 @@ const Call = (props: ChildProps) => {
       const {callCode, twilioNumber} = await createResponse.json()
       setCallCode(callCode)
       setTwilioNumber(twilioNumber)
-      props.setPhase(Phase.Midcall)
     })()
   }, [props.phase])
 

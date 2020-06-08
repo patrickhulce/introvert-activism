@@ -71,6 +71,13 @@ export class TwilioAgent {
     return {twiml: response.toString()}
   }
 
+  public static twimlSilence(): {twiml: string} {
+    const response = new twilio.twiml.VoiceResponse()
+    response.pause({length: 1})
+
+    return {twiml: response.toString()}
+  }
+
   public static twimlHangup(): {twiml: string} {
     const response = new twilio.twiml.VoiceResponse()
     response.say('Input was incorrect. Goodbye')
@@ -133,7 +140,7 @@ export class TwilioAgent {
     callRecord.sourceNumber = sourceCall.from
   }
 
-  public async playMessageInConference(
+  public async updateConferenceWithAction(
     callCode: number,
     conferenceUpdateUrl: string,
   ): Promise<void> {

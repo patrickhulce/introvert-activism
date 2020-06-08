@@ -194,15 +194,33 @@ export function createApiRouter(localPath: string): express.Router {
   )
 
   router.post(
-    '/remote/calls/speak',
+    '/remote/calls/:callCode/speak',
     createHandler(async (req, res) => {
-      const {callCode, jwt} = req.body
+      const callCode = Number(req.params.callCode)
+      const {jwt} = req.body
       const callRecord = await twilio.confirmCallCode(callCode)
       if (!callRecord || callRecord.jwt !== jwt) return res.sendStatus(204)
       log.info(`playing message in call ${callCode}`)
-      await twilio.playMessageInConference(
+      await twilio.updateConferenceWithAction(
         Number(callCode),
-        `${PUBLIC_ORIGIN}/api/webhooks/conference-update/${callCode}`,
+        `${PUBLIC_ORIGIN}/api/webhooks/conference-update/${callCode}/play`,
+      )
+
+      res.sendStatus(204)
+    }),
+  )
+
+  router.post(
+    '/remote/calls/:callCode/stop',
+    createHandler(async (req, res) => {
+      const callCode = Number(req.params.callCode)
+      const {jwt} = req.body
+      const callRecord = await twilio.confirmCallCode(callCode)
+      if (!callRecord || callRecord.jwt !== jwt) return res.sendStatus(204)
+      log.info(`stopping message in call ${callCode}`)
+      await twilio.updateConferenceWithAction(
+        Number(callCode),
+        `${PUBLIC_ORIGIN}/api/webhooks/conference-update/${callCode}/stop`,
       )
 
       res.sendStatus(204)
@@ -257,7 +275,7 @@ export function createApiRouter(localPath: string): express.Router {
   )
 
   router.post(
-    '/webhooks/conference-update/:callCode',
+    '/webhooks/conference-update/:callCode/play',
     createHandler(async (req, res) => {
       const callCode = req.params.callCode
       const callRecord = await twilio.confirmCallCode(callCode)
@@ -267,6 +285,17 @@ export function createApiRouter(localPath: string): express.Router {
         TwilioAgent.twimlPlayAudioFile(`${PUBLIC_ORIGIN}/api/webhooks/audio-file/${callCode}`)
           .twiml,
       )
+    }),
+  )
+
+  router.post(
+    '/webhooks/conference-update/:callCode/stop',
+    createHandler(async (req, res) => {
+      const callCode = req.params.callCode
+      const callRecord = await twilio.confirmCallCode(callCode)
+      if (!callRecord) return res.sendStatus(500)
+      res.set('Content-Type', 'text/xml')
+      res.send(TwilioAgent.twimlSilence().twiml)
     }),
   )
 
