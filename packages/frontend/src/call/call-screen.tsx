@@ -13,8 +13,10 @@ import Typography from '@material-ui/core/Typography'
 import {makeStyles, Theme, createStyles} from '@material-ui/core/styles'
 import ChatIcon from '@material-ui/icons/Chat'
 import PlayIcon from '@material-ui/icons/PlayArrow'
+import {Link} from 'react-router-dom'
 
 import type * as Api from '../../../shared/src/utils/api'
+import {useUserSettings} from '../settings/use-user-settings'
 
 async function fetchJSON<T>(url: string): Promise<T> {
   const response = await fetch(url)
@@ -59,6 +61,8 @@ interface Representative {
 }
 
 interface ChildProps {
+  accessToken: string
+  remoteApiOrigin: string
   phase: Phase
   setPhase: (p: Phase) => void
   options: CallOptions
@@ -97,6 +101,21 @@ const useStyles = makeStyles((theme: Theme) =>
     },
   }),
 )
+
+const SettingsPrompt = () => {
+  const classes = useStyles()
+  return (
+    <div className={classes.containerSection}>
+      <Typography variant="h5" className={classes.textAlign}>
+        Configuration Missing!
+      </Typography>
+      <Typography variant="body1" style={{marginTop: 20}}>
+        It looks like this might be your first time using Introvert Activism. You will need to{' '}
+        <Link to="/settings">configure a few settings</Link> before jumping onto calls.
+      </Typography>
+    </div>
+  )
+}
 
 const GetLocation = (props: ChildProps) => {
   const classes = useStyles()
@@ -324,7 +343,7 @@ const Midcall = (props: ChildProps & {callCode: string}) => {
               method: 'POST',
               headers: {'Content-type': 'application/json'},
               body: JSON.stringify({
-                jwt: 'blacklivesmatter',
+                jwt: props.accessToken,
               }),
             })
           }}>
@@ -340,7 +359,7 @@ const Midcall = (props: ChildProps & {callCode: string}) => {
               method: 'POST',
               headers: {'Content-type': 'application/json'},
               body: JSON.stringify({
-                jwt: 'blacklivesmatter',
+                jwt: props.accessToken,
               }),
             })
           }}>
@@ -391,7 +410,7 @@ const Call = (props: ChildProps) => {
         method: 'POST',
         headers: {'Content-type': 'application/json'},
         body: JSON.stringify({
-          jwt: 'blacklivesmatter',
+          jwt: props.accessToken,
           targetNumber: '+15558675309',
           messageId: props.options.messageId,
           messageAudioBase64: audioBase64,
@@ -414,6 +433,7 @@ const Call = (props: ChildProps) => {
 
 export const MakeACall = (): JSX.Element => {
   const classes = useStyles()
+  const [settings] = useUserSettings()
   const [phaseState_, setPhase] = React.useState(Phase.GetLocation)
   const [options, setOptions] = React.useState({
     zipcode: '',
@@ -429,7 +449,15 @@ export const MakeACall = (): JSX.Element => {
   if (phaseState_ === Phase.Midcall) phase = phaseState_
   if (phaseState_ === Phase.Postcall) phase = phaseState_
 
-  const props = {phase, setPhase, options, setOptions}
+  const props = {phase, setPhase, options, setOptions, ...settings}
+
+  if (!settings.accessToken || !settings.remoteApiOrigin) {
+    return (
+      <div className={classes.container}>
+        <SettingsPrompt />
+      </div>
+    )
+  }
 
   return (
     <div className={classes.container}>

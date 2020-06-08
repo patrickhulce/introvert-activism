@@ -7,8 +7,8 @@ import Typography from '@material-ui/core/Typography'
 import {useUserSettings} from './use-user-settings'
 
 export const SettingsScreen = (): JSX.Element => {
-  const [formValues, setFormValues] = React.useState({accessToken: '', remoteApiOrigin: ''})
   const [settings, setSettings] = useUserSettings()
+  const [formValues, setFormValues] = React.useState(settings)
 
   const isDirty =
     formValues.accessToken !== settings.accessToken ||
