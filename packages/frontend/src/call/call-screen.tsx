@@ -299,7 +299,7 @@ const Precall = (props: ChildProps & {twilioNumber: string; callCode: string}) =
 
 const Midcall = (props: ChildProps & {callCode: string}) => {
   const classes = useStyles()
-  const [hasBeenStopped, setHasBeenStopped] = React.useState(false)
+  const [hasBeenPlayed, setHasBeenPlayed] = React.useState(false)
   useCallStatusCallback(props, props.callCode, payload => {
     if (payload.completed) {
       props.setPhase(Phase.Postcall)
@@ -314,37 +314,39 @@ const Midcall = (props: ChildProps & {callCode: string}) => {
       <Typography variant="h5" className={classes.textAlign}>
         Play Your Message
       </Typography>
-      <Button
-        variant="contained"
-        color="primary"
-        disabled={hasBeenStopped}
-        onClick={async () => {
-          await fetch(`/api/remote/calls/${props.callCode}/speak`, {
-            method: 'POST',
-            headers: {'Content-type': 'application/json'},
-            body: JSON.stringify({
-              jwt: 'blacklivesmatter',
-            }),
-          })
-        }}>
-        Play
-      </Button>
-      <Button
-        variant="contained"
-        color="secondary"
-        disabled={hasBeenStopped}
-        onClick={async () => {
-          setHasBeenStopped(true)
-          await fetch(`/api/remote/calls/${props.callCode}/stop`, {
-            method: 'POST',
-            headers: {'Content-type': 'application/json'},
-            body: JSON.stringify({
-              jwt: 'blacklivesmatter',
-            }),
-          })
-        }}>
-        Stop
-      </Button>
+      <div className={classes.zipcodeFormLine}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={async () => {
+            setHasBeenPlayed(true)
+            await fetch(`/api/remote/calls/${props.callCode}/speak`, {
+              method: 'POST',
+              headers: {'Content-type': 'application/json'},
+              body: JSON.stringify({
+                jwt: 'blacklivesmatter',
+              }),
+            })
+          }}>
+          Play{hasBeenPlayed ? ' from Beginning' : ''}
+        </Button>
+        <Button
+          className={classes.zipcodeButton}
+          variant="contained"
+          color="secondary"
+          disabled={!hasBeenPlayed}
+          onClick={async () => {
+            await fetch(`/api/remote/calls/${props.callCode}/stop`, {
+              method: 'POST',
+              headers: {'Content-type': 'application/json'},
+              body: JSON.stringify({
+                jwt: 'blacklivesmatter',
+              }),
+            })
+          }}>
+          Stop
+        </Button>
+      </div>
     </div>
   )
 }
@@ -357,19 +359,21 @@ const Postcall = (props: ChildProps) => {
       <Typography variant="h5" className={classes.textAlign}>
         Great job!
       </Typography>
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={() => {
-          props.setOptions({
-            ...props.options,
-            representativeId: '',
-            numberToCall: '',
-            messageId: '',
-          })
-        }}>
-        Make Another Call
-      </Button>
+      <div className={classes.zipcodeFormLine}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => {
+            props.setOptions({
+              ...props.options,
+              representativeId: '',
+              numberToCall: '',
+              messageId: '',
+            })
+          }}>
+          Make Another Call
+        </Button>
+      </div>
     </div>
   )
 }

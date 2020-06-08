@@ -7,7 +7,7 @@ import {createLogger} from '../../shared/src/utils/logging'
 import {LocalApiStore} from './storage'
 import {TwilioAgent} from './twilio'
 
-const PUBLIC_ORIGIN = 'http://649566346461.ngrok.io'
+const PUBLIC_ORIGIN = process.env.PUBLIC_ORIGIN || ''
 
 function makeResponse<T>(payload: T): Api.Response<T> {
   return {

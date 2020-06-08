@@ -57,7 +57,7 @@ export class TwilioAgent {
         startConferenceOnEnter: true,
         endConferenceOnExit: true,
         statusCallback: statusCallbackUrl,
-        statusCallbackEvent: ['start', 'join'],
+        statusCallbackEvent: ['start', 'join', 'end'],
       },
       `call-${callCode}`,
     )
