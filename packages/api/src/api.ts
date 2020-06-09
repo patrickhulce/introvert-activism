@@ -158,11 +158,16 @@ export function createApiRouter(localPath: string): express.Router {
     '/remote/calls',
     createHandler(async (req, res) => {
       const {jwt, targetNumber, messageId, messageAudioBase64} = req.body
+      const convertedAudio = await TwilioAgent.convertToMp3Buffer(
+        Buffer.from(messageAudioBase64, 'base64'),
+        'audio/webm',
+      )
+
       const callRecord = await twilio.createCallRecord({
         jwt,
         targetNumber: process.env.TWILIO_TEST_CALL_NUMBER || targetNumber,
         messageId,
-        messageAudio: Buffer.from(messageAudioBase64, 'base64'),
+        messageAudio: convertedAudio,
         storedAt: new Date(),
       })
 

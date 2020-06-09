@@ -1,3 +1,8 @@
+import {spawn} from 'child_process'
+import * as os from 'os'
+import * as path from 'path'
+
+import * as fs from 'fs-extra'
 import _ from 'lodash'
 import twilio from 'twilio'
 
@@ -31,6 +36,39 @@ export class TwilioAgent {
 
     this._callsByCode = new Map()
     this._callsByMessageId = new Map()
+  }
+
+  public static async convertToMp3Buffer(audioFile: Buffer, mimeType: string): Promise<Buffer> {
+    const extensionMatch = mimeType.match(/audio\/(.*)/)
+    if (!extensionMatch) throw new Error(`Invalid mime type ${mimeType}`)
+    const extension = extensionMatch[1]
+
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'twilioconversions'))
+    const inFile = path.join(tmpDir, `in.${extension}`)
+    await fs.writeFile(inFile, audioFile)
+
+    await new Promise((resolve, reject) => {
+      const convertProcess = spawn(
+        'ffmpeg',
+        [
+          ...['-i', inFile], // use the .webm file as input
+          '-vn', // disable video
+          ...['-ab', '64k'], // use 64kbps bitrate
+          ...['-ar', '44100'], // use 44.1KHz
+          `out.mp3`, // output to this mp3 file
+        ],
+        {cwd: tmpDir},
+      )
+
+      convertProcess.once('exit', code => {
+        if (code === 0) resolve()
+        else reject(new Error(`ffmpeg exited with code ${code}`))
+      })
+    })
+
+    const converted = await fs.readFile(path.join(tmpDir, 'out.mp3'))
+    await fs.remove(tmpDir)
+    return converted
   }
 
   public static twimlPromptForCallCode(callbackUrl: string): {twiml: string} {
