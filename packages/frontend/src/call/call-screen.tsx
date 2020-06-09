@@ -16,7 +16,7 @@ import PlayIcon from '@material-ui/icons/PlayArrow'
 import {Link} from 'react-router-dom'
 
 import type * as Api from '../../../shared/src/utils/api'
-import {useUserSettings} from '../settings/use-user-settings'
+import {useUserSettings, UserSettings} from '../settings/use-user-settings'
 
 async function fetchJSON<T>(url: string): Promise<T> {
   const response = await fetch(url)
@@ -61,8 +61,8 @@ interface Representative {
 }
 
 interface ChildProps {
-  accessToken: string
-  remoteApiOrigin: string
+  userSettings: UserSettings
+  setUserSettings: (s: UserSettings) => void
   phase: Phase
   setPhase: (p: Phase) => void
   options: CallOptions
@@ -119,7 +119,7 @@ const SettingsPrompt = () => {
 
 const GetLocation = (props: ChildProps) => {
   const classes = useStyles()
-  const [zip, setZip] = React.useState('')
+  const [zip, setZip] = React.useState(props.options.zipcode)
   return (
     <div className={classes.containerSection}>
       <Typography variant="h5" className={classes.textAlign}>
@@ -127,8 +127,10 @@ const GetLocation = (props: ChildProps) => {
       </Typography>
       <form
         onSubmit={evt => {
-          if (props.phase === Phase.GetLocation) props.setOptions({...props.options, zipcode: zip})
-          else {
+          if (props.phase === Phase.GetLocation) {
+            props.setOptions({...props.options, zipcode: zip})
+            props.setUserSettings({...props.userSettings, lastUsedZip: zip})
+          } else {
             props.setOptions({zipcode: '', representativeId: '', numberToCall: '', messageId: ''})
             setZip('')
           }
@@ -343,7 +345,7 @@ const Midcall = (props: ChildProps & {callCode: string}) => {
               method: 'POST',
               headers: {'Content-type': 'application/json'},
               body: JSON.stringify({
-                jwt: props.accessToken,
+                jwt: props.userSettings.accessToken,
               }),
             })
           }}>
@@ -359,7 +361,7 @@ const Midcall = (props: ChildProps & {callCode: string}) => {
               method: 'POST',
               headers: {'Content-type': 'application/json'},
               body: JSON.stringify({
-                jwt: props.accessToken,
+                jwt: props.userSettings.accessToken,
               }),
             })
           }}>
@@ -410,7 +412,7 @@ const Call = (props: ChildProps) => {
         method: 'POST',
         headers: {'Content-type': 'application/json'},
         body: JSON.stringify({
-          jwt: props.accessToken,
+          jwt: props.userSettings.accessToken,
           targetNumber: '+15558675309',
           messageId: props.options.messageId,
           messageAudioBase64: audioBase64,
@@ -433,10 +435,10 @@ const Call = (props: ChildProps) => {
 
 export const MakeACall = (): JSX.Element => {
   const classes = useStyles()
-  const [settings] = useUserSettings()
+  const [settings, setUserSettings] = useUserSettings()
   const [phaseState_, setPhase] = React.useState(Phase.GetLocation)
   const [options, setOptions] = React.useState({
-    zipcode: '',
+    zipcode: settings.lastUsedZip || '',
     representativeId: '',
     numberToCall: '',
     messageId: '',
@@ -449,7 +451,7 @@ export const MakeACall = (): JSX.Element => {
   if (phaseState_ === Phase.Midcall) phase = phaseState_
   if (phaseState_ === Phase.Postcall) phase = phaseState_
 
-  const props = {phase, setPhase, options, setOptions, ...settings}
+  const props = {phase, setPhase, options, setOptions, userSettings: settings, setUserSettings}
 
   if (!settings.accessToken || !settings.remoteApiOrigin) {
     return (
