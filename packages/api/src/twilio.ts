@@ -38,6 +38,10 @@ export class TwilioAgent {
     this._callsByMessageId = new Map()
   }
 
+  public isInProgress(): boolean {
+    return [...this._callsByCode.values()].some(call => call.sourceNumber)
+  }
+
   public static async convertToMp3Buffer(audioFile: Buffer, mimeType: string): Promise<Buffer> {
     const extensionMatch = mimeType.match(/audio\/(.*)/)
     if (!extensionMatch) throw new Error(`Invalid mime type ${mimeType}`)

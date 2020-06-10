@@ -17,7 +17,7 @@ const log = createLogger('electron:server')
 
 async function startServer(localFilePath: string): Promise<{port: number; close(): void}> {
   const app = express()
-  const router = createApiRouter(localFilePath)
+  const {router} = createApiRouter(localFilePath)
 
   app.use(bodyParser.json({limit: '10mb'}))
   app.use(bodyParser.urlencoded({extended: true}))

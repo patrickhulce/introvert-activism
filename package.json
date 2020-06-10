@@ -5,7 +5,9 @@
   "version": "1.0.0",
   "main": "dist-ts/electron/src/main/entry.js",
   "scripts": {
-    "build": "tsc && cd packages/frontend && yarn build",
+    "build": "yarn build:api && yarn build:frontend",
+    "build:api": "tsc",
+    "build:frontend": "cd packages/frontend && yarn build",
     "build:watch": "bash ./scripts/build-watch.sh",
     "start": "cd packages/electron && yarn start",
     "package": "bash ./scripts/package.sh",

@@ -28,7 +28,12 @@ function createHandler(
     })
 }
 
-export function createApiRouter(localPath: string): express.Router {
+export function createApiRouter(
+  localPath: string,
+): {
+  router: express.Router
+  twilio: TwilioAgent
+} {
   const twilio = new TwilioAgent()
 
   const router = express.Router()
@@ -315,5 +320,5 @@ export function createApiRouter(localPath: string): express.Router {
     }),
   )
 
-  return router
+  return {router, twilio}
 }

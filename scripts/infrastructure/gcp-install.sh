@@ -41,3 +41,4 @@ EOF
 sudo mv /tmp/gcp-post-update.sh /home/activist/introvert-activism.git/hooks/post-update
 sudo chown activist.activist /home/activist/introvert-activism.git/hooks/post-update
 sudo chmod +x /home/activist/introvert-activism.git/hooks/post-update
+sudo -u activist bash /home/activist/introvert-activism.git/hooks/post-update
