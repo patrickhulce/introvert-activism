@@ -17,8 +17,14 @@ sleep 5
 
 # Install dependencies
 sudo apt-get update || sudo apt-get update || sudo apt-get update
-sudo apt-get install -y xvfb nodejs google-cloud-sdk git zip ffmpeg
+sudo apt-get install -y xvfb nodejs google-cloud-sdk git zip ffmpeg nginx
 sudo npm install -g yarn pm2
+
+# Setup nginx
+sudo mv /tmp/gcp-nginx-site /etc/nginx/sites-available/default
+sudo chown root.root /etc/nginx/sites-available/default
+sudo chmod 0644 /etc/nginx/sites-available/default
+sudo service nginx restart
 
 # Add an activist user
 sudo useradd -m -s $(which bash) -G sudo activist || echo 'activist already exists'

@@ -42,6 +42,7 @@ rm .tmp_env_vars
 
 gcloud --project="$CLOUDSDK_CORE_PROJECT" compute scp ./scripts/infrastructure/gcp-install.sh introvert-activism-server:/tmp/gcp-install.sh --zone="$ZONE"
 gcloud --project="$CLOUDSDK_CORE_PROJECT" compute scp ./scripts/infrastructure/gcp-post-update.sh introvert-activism-server:/tmp/gcp-post-update.sh --zone="$ZONE"
+gcloud --project="$CLOUDSDK_CORE_PROJECT" compute scp ./scripts/infrastructure/gcp-nginx-site introvert-activism-server:/tmp/gcp-nginx-site --zone="$ZONE"
 gcloud --project="$CLOUDSDK_CORE_PROJECT" compute scp ~/.ssh/id_rsa.pub introvert-activism-server:/tmp/ssh_key --zone="$ZONE"
 gcloud --project="$CLOUDSDK_CORE_PROJECT" compute ssh introvert-activism-server --command="bash /tmp/gcp-install.sh" --zone="$ZONE"
 

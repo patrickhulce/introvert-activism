@@ -2,6 +2,8 @@
 
 set -euxo pipefail
 
+source /home/activist/.envrc
+
 unset GIT_DIR
 cd /home/activist/introvert-activism/
 
