@@ -20,7 +20,7 @@ interface CallRecord {
   storedAt: Date
 
   twilioParticipants?: Array<
-    import('twilio/lib/rest/api/V2010/account/conference/participant').ParticipantInstance
+    import('twilio/lib/rest/api/v2010/account/conference/participant').ParticipantInstance
   >
 }
 
