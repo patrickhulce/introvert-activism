@@ -171,6 +171,15 @@ function validateJwtMiddleware(): (
   }
 }
 
+function validateTwilioHookMiddleware(
+  twilio: TwilioAgent,
+): (req: express.Request, res: express.Response, next: express.NextFunction) => void {
+  return (req, res, next) => {
+    if (twilio.validateTwilioSignature(req)) return next()
+    res.sendStatus(401)
+  }
+}
+
 export function createCallRouter(): {
   router: express.Router
   twilio: TwilioAgent
@@ -272,6 +281,7 @@ export function createCallRouter(): {
 
   router.post(
     '/webhooks/initiate-call',
+    validateTwilioHookMiddleware(twilio),
     createHandler(async (req, res) => {
       const number = req.body.From
       const callId = req.body.CallSid
@@ -285,6 +295,7 @@ export function createCallRouter(): {
 
   router.post(
     '/webhooks/confirm-code',
+    validateTwilioHookMiddleware(twilio),
     createHandler(async (req, res) => {
       const number = req.body.From
       const code = req.body.Digits
@@ -303,6 +314,7 @@ export function createCallRouter(): {
 
   router.post(
     '/webhooks/conference-status/:callCode',
+    validateTwilioHookMiddleware(twilio),
     createHandler(async (req, res) => {
       log.info(`twilio conference status update ${req.body.StatusCallbackEvent}`)
       if (req.body.StatusCallbackEvent === 'conference-end') {
@@ -319,6 +331,7 @@ export function createCallRouter(): {
 
   router.post(
     '/webhooks/conference-update/:callCode/play',
+    validateTwilioHookMiddleware(twilio),
     createHandler(async (req, res) => {
       const callCode = req.params.callCode
       const callRecord = await twilio.confirmCallCode(callCode)
@@ -333,6 +346,7 @@ export function createCallRouter(): {
 
   router.post(
     '/webhooks/conference-update/:callCode/stop',
+    validateTwilioHookMiddleware(twilio),
     createHandler(async (req, res) => {
       const callCode = req.params.callCode
       const callRecord = await twilio.confirmCallCode(callCode)
@@ -344,6 +358,7 @@ export function createCallRouter(): {
 
   router.get(
     '/webhooks/audio-file/:callCode',
+    validateTwilioHookMiddleware(twilio),
     createHandler(async (req, res) => {
       const callCode = req.params.callCode
       const callRecord = await twilio.confirmCallCode(callCode)
