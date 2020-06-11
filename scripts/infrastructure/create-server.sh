@@ -6,6 +6,7 @@ set -euxo pipefail
 #   - You have your SSH public key at ~/.ssh/id_rsa.pub
 #   - brew cask install google-cloud-sdk
 #   - gcloud auth login
+#   - export JWT_SECRET="<some very long alphanumeric secret>"
 #   - export CLOUDSDK_CORE_PROJECT="<the project>"
 #   - export PUBLIC_INTROVERTACTIVISM_ORIGIN="<the origin you're exposing to internet>"
 
@@ -29,6 +30,7 @@ export TWILIO_SID="$TWILIO_SID"
 export TWILIO_TOKEN="$TWILIO_TOKEN"
 export TWILIO_NUMBER="$TWILIO_NUMBER"
 export PUBLIC_INTERNET_PREFIX="$PUBLIC_INTROVERTACTIVISM_ORIGIN"
+export JWT_SECRET="$JWT_SECRET"
 EOF
 
 # Instance needs time to start up.

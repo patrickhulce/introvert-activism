@@ -1,5 +1,6 @@
 import bodyParser from 'body-parser'
 import express from 'express'
+import * as jwt from 'jsonwebtoken'
 import {v4 as uuidv4} from 'uuid'
 
 import type * as Api from '../../shared/src/utils/api'
@@ -11,6 +12,7 @@ import {TwilioAgent} from './twilio'
 const FALLBACK_ORIGIN = 'https://api.introvertactivism.org'
 const PUBLIC_INTERNET_PREFIX = process.env.PUBLIC_INTERNET_PREFIX || FALLBACK_ORIGIN
 const REMOTE_PROXY_DESTINATION = process.env.REMOTE_PROXY_DESTINATION || FALLBACK_ORIGIN
+const JWT_SECRET = process.env.JWT_SECRET || ''
 
 function makeResponse<T>(payload: T): Api.Response<T> {
   return {
@@ -152,6 +154,21 @@ export function initializeMiddleware(router: express.Router | express.Applicatio
   })
 }
 
+function validateJwtMiddleware(): (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+) => void {
+  return (req, res, next) => {
+    const rawToken = req.body?.jwt || req.header('x-jwt') || req.header('authorization') || ''
+    const token = rawToken.replace(/^bearer\s+/i, '').trim()
+    jwt.verify(token, JWT_SECRET, {ignoreExpiration: true}, err => {
+      if (!err) return next()
+      res.sendStatus(403)
+    })
+  }
+}
+
 export function createCallRouter(): {
   router: express.Router
   twilio: TwilioAgent
@@ -171,6 +188,7 @@ export function createCallRouter(): {
   // Phase 7 - use the JWT (server)
   router.post(
     '/calls',
+    validateJwtMiddleware(),
     createHandler(async (req, res) => {
       const {jwt, targetNumber, messageId, messageAudioBase64} = req.body
       const convertedAudio = await TwilioAgent.convertToMp3Buffer(
@@ -193,6 +211,7 @@ export function createCallRouter(): {
 
   router.get(
     '/calls/:callCode/status',
+    validateJwtMiddleware(),
     createHandler(async (req, res) => {
       const callCode = req.params.callCode
       const timeout = Number(req.query && req.query.timeout) || 30000
@@ -215,6 +234,7 @@ export function createCallRouter(): {
 
   router.post(
     '/calls/:callCode/speak',
+    validateJwtMiddleware(),
     createHandler(async (req, res) => {
       const callCode = Number(req.params.callCode)
       const {jwt} = req.body
@@ -232,6 +252,7 @@ export function createCallRouter(): {
 
   router.post(
     '/calls/:callCode/stop',
+    validateJwtMiddleware(),
     createHandler(async (req, res) => {
       const callCode = Number(req.params.callCode)
       const {jwt} = req.body

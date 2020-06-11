@@ -11,3 +11,6 @@ public/
 
 # Exclude logs
 *.log
+
+# Exclude tmp secrets
+.tmp_env_vars
