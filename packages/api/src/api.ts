@@ -1,3 +1,4 @@
+import bodyParser from 'body-parser'
 import express from 'express'
 import {v4 as uuidv4} from 'uuid'
 
@@ -7,7 +8,9 @@ import {createLogger} from '../../shared/src/utils/logging'
 import {LocalApiStore} from './storage'
 import {TwilioAgent} from './twilio'
 
-const PUBLIC_ORIGIN = process.env.PUBLIC_ORIGIN || ''
+const FALLBACK_ORIGIN = 'https://api.introvertactivism.org'
+const PUBLIC_INTERNET_PREFIX = process.env.PUBLIC_INTERNET_PREFIX || FALLBACK_ORIGIN
+const REMOTE_PROXY_DESTINATION = process.env.REMOTE_PROXY_DESTINATION || FALLBACK_ORIGIN
 
 function makeResponse<T>(payload: T): Api.Response<T> {
   return {
@@ -28,33 +31,12 @@ function createHandler(
     })
 }
 
-export function createApiRouter(
-  localPath: string,
-): {
-  router: express.Router
-  twilio: TwilioAgent
-} {
-  const twilio = new TwilioAgent()
-
+function createMessagesRouter(localMessageStoragePath: string): express.Router {
   const router = express.Router()
-  const store = new LocalApiStore(localPath)
-
-  router.use((req, res, next) => {
-    const start = Date.now()
-    log.verbose('⇨', req.method, req.originalUrl)
-    res.once('finish', () => {
-      let logFn = log.info
-      if (res.statusCode >= 400) logFn = log.warn
-      if (res.statusCode >= 500) logFn = log.error
-      logFn('⇦', req.method, req.originalUrl, res.statusCode, `${Date.now() - start}ms`)
-    })
-    next()
-  })
-
-  router.get('/version', (req, res) => res.json({version: 1}))
+  const store = new LocalApiStore(localMessageStoragePath)
 
   router.get(
-    '/messages',
+    '/',
     createHandler(async (req, res) => {
       const messages = await store.getMessages()
       res.json(
@@ -64,7 +46,7 @@ export function createApiRouter(
   )
 
   router.post(
-    '/messages',
+    '/',
     createHandler(async (req, res) => {
       // Generate a uuid.
       const uuid = uuidv4()
@@ -85,7 +67,7 @@ export function createApiRouter(
   )
 
   router.get(
-    '/messages/:messageId',
+    '/:messageId',
     createHandler(async (req, res) => {
       const messageId = req.params.messageId
       const message = await store.getMessage(messageId)
@@ -100,7 +82,7 @@ export function createApiRouter(
   )
 
   router.put(
-    '/messages/:messageId',
+    '/:messageId',
     createHandler(async (req, res) => {
       const messageId = req.params.messageId
       // Remove uneditable content if exists.
@@ -116,7 +98,7 @@ export function createApiRouter(
   )
 
   router.get(
-    '/messages/:messageId/audio',
+    '/:messageId/audio',
     createHandler(async (req, res) => {
       // Special MessagePaylod that is not json, only bin'd file.
       const audio = await store.getAudio(req.params.messageId)
@@ -128,7 +110,7 @@ export function createApiRouter(
   )
 
   router.put(
-    '/messages/:messageId/audio',
+    '/:messageId/audio',
     createHandler(async (req, res) => {
       const body = req.body
       await store.putAudio(req.params.messageId, body)
@@ -137,7 +119,7 @@ export function createApiRouter(
   )
 
   router.delete(
-    '/messages/:messageId',
+    '/:messageId',
     createHandler(async (req, res) => {
       const del = await store.deleteMessage(req.params.messageId)
       if (!del) {
@@ -148,6 +130,34 @@ export function createApiRouter(
       return
     }),
   )
+
+  return router
+}
+
+export function initializeMiddleware(router: express.Router | express.Application): void {
+  router.use(bodyParser.json({limit: '10mb'}))
+  router.use(bodyParser.urlencoded({extended: true}))
+  router.use(bodyParser.raw({type: 'audio/*', limit: '10mb'}))
+
+  router.use((req, res, next) => {
+    const start = Date.now()
+    log.verbose('⇨', req.method, req.originalUrl)
+    res.once('finish', () => {
+      let logFn = log.info
+      if (res.statusCode >= 400) logFn = log.warn
+      if (res.statusCode >= 500) logFn = log.error
+      logFn('⇦', req.method, req.originalUrl, res.statusCode, `${Date.now() - start}ms`)
+    })
+    next()
+  })
+}
+
+export function createCallRouter(): {
+  router: express.Router
+  twilio: TwilioAgent
+} {
+  const twilio = new TwilioAgent()
+  const router = express.Router()
 
   // JWT is sent as auth token for all service API calls
   // Phase 1 - Trade a JWT token+senator number+message for a call code (app POST /calls)
@@ -160,7 +170,7 @@ export function createApiRouter(
   // Phase 6 - POST /calls/:id/instruction with the message id and play/pause (app)
   // Phase 7 - use the JWT (server)
   router.post(
-    '/remote/calls',
+    '/calls',
     createHandler(async (req, res) => {
       const {jwt, targetNumber, messageId, messageAudioBase64} = req.body
       const convertedAudio = await TwilioAgent.convertToMp3Buffer(
@@ -182,7 +192,7 @@ export function createApiRouter(
   )
 
   router.get(
-    '/remote/calls/:callCode/status',
+    '/calls/:callCode/status',
     createHandler(async (req, res) => {
       const callCode = req.params.callCode
       const timeout = Number(req.query && req.query.timeout) || 30000
@@ -204,7 +214,7 @@ export function createApiRouter(
   )
 
   router.post(
-    '/remote/calls/:callCode/speak',
+    '/calls/:callCode/speak',
     createHandler(async (req, res) => {
       const callCode = Number(req.params.callCode)
       const {jwt} = req.body
@@ -213,7 +223,7 @@ export function createApiRouter(
       log.info(`playing message in call ${callCode}`)
       await twilio.updateConferenceWithAction(
         Number(callCode),
-        `${PUBLIC_ORIGIN}/api/webhooks/conference-update/${callCode}/play`,
+        `${PUBLIC_INTERNET_PREFIX}/webhooks/conference-update/${callCode}/play`,
       )
 
       res.sendStatus(204)
@@ -221,7 +231,7 @@ export function createApiRouter(
   )
 
   router.post(
-    '/remote/calls/:callCode/stop',
+    '/calls/:callCode/stop',
     createHandler(async (req, res) => {
       const callCode = Number(req.params.callCode)
       const {jwt} = req.body
@@ -230,7 +240,7 @@ export function createApiRouter(
       log.info(`stopping message in call ${callCode}`)
       await twilio.updateConferenceWithAction(
         Number(callCode),
-        `${PUBLIC_ORIGIN}/api/webhooks/conference-update/${callCode}/stop`,
+        `${PUBLIC_INTERNET_PREFIX}/webhooks/conference-update/${callCode}/stop`,
       )
 
       res.sendStatus(204)
@@ -245,7 +255,7 @@ export function createApiRouter(
       log.info(`twilio call received from ${number} (${callId})`)
       res.set('Content-Type', 'text/xml')
       res.send(
-        TwilioAgent.twimlPromptForCallCode(`${PUBLIC_ORIGIN}/api/webhooks/confirm-code`).twiml,
+        TwilioAgent.twimlPromptForCallCode(`${PUBLIC_INTERNET_PREFIX}/webhooks/confirm-code`).twiml,
       )
     }),
   )
@@ -259,7 +269,7 @@ export function createApiRouter(
       const callRecord = await twilio.confirmCallCode(code)
       const {twiml} = callRecord
         ? TwilioAgent.twimlCreateConferenceCall(
-            `${PUBLIC_ORIGIN}/api/webhooks/conference-status/${callRecord.callCode}`,
+            `${PUBLIC_INTERNET_PREFIX}/webhooks/conference-status/${callRecord.callCode}`,
             code,
           )
         : TwilioAgent.twimlHangup()
@@ -292,7 +302,7 @@ export function createApiRouter(
       if (!callRecord) return res.sendStatus(500)
       res.set('Content-Type', 'text/xml')
       res.send(
-        TwilioAgent.twimlPlayAudioFile(`${PUBLIC_ORIGIN}/api/webhooks/audio-file/${callCode}`)
+        TwilioAgent.twimlPlayAudioFile(`${PUBLIC_INTERNET_PREFIX}/webhooks/audio-file/${callCode}`)
           .twiml,
       )
     }),
@@ -320,5 +330,49 @@ export function createApiRouter(
     }),
   )
 
-  return {router, twilio}
+  return {twilio, router}
+}
+
+function createProxyRouter(): express.Router {
+  const router = express.Router()
+
+  router.use(async (req, res) => {
+    let destination = req.header('x-remote-proxy-destination') || REMOTE_PROXY_DESTINATION
+    if (destination.endsWith('/')) destination = destination.slice(0, destination.length - 1)
+    destination = `${destination}${req.path}`
+    log.info('proxying', req.path, 'to', destination)
+
+    const options: RequestInit = {method: req.method}
+    if (req.body) {
+      options.headers = {'content-type': 'application/json'}
+      options.body = JSON.stringify(req.body)
+    }
+
+    const response = await fetch(destination, options)
+    log.info('proxy response received', response.status, response.url)
+    if (response.status === 200) res.json(await response.json())
+    else if (response.status === 204) res.sendStatus(204)
+    else res.status(response.status).send(await response.text())
+  })
+
+  return router
+}
+
+export interface LocalRouterOptions {
+  remoteBehavior: 'proxy' | 'ngrok'
+  localMessageStoragePath: string
+}
+
+export function createLocalRouter(options: LocalRouterOptions): express.Router {
+  const router = express.Router()
+  const {router: callRouter} = createCallRouter()
+  const proxyRouter = createProxyRouter()
+  const messagesRouter = createMessagesRouter(options.localMessageStoragePath)
+  const remoteRouter = options.remoteBehavior === 'ngrok' ? callRouter : proxyRouter
+
+  router.get('/version', (req, res) => res.json({version: 1}))
+  router.use('/messages', messagesRouter)
+  router.use('/remote', remoteRouter)
+
+  return router
 }

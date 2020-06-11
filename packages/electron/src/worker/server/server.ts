@@ -1,10 +1,9 @@
 import {createServer} from 'http'
 
-import bodyParser from 'body-parser'
 import {ipcRenderer} from 'electron'
 import express from 'express'
 
-import {createApiRouter} from '../../../../api/src/api'
+import {createLocalRouter, initializeMiddleware} from '../../../../api/src/api'
 import {
   ComlinkElectron,
   ComlinkTarget,
@@ -17,12 +16,12 @@ const log = createLogger('electron:server')
 
 async function startServer(localFilePath: string): Promise<{port: number; close(): void}> {
   const app = express()
-  const {router} = createApiRouter(localFilePath)
+  const router = createLocalRouter({
+    remoteBehavior: process.env.REMOTE_SERVER_BEHAVIOR === 'ngrok' ? 'ngrok' : 'proxy',
+    localMessageStoragePath: localFilePath,
+  })
 
-  app.use(bodyParser.json({limit: '10mb'}))
-  app.use(bodyParser.urlencoded({extended: true}))
-  app.use(bodyParser.raw({type: 'audio/*', limit: '10mb'}))
-
+  initializeMiddleware(app)
   app.use('/static', express.static(findFrontendDirectory()))
   app.use('/api', router)
 
