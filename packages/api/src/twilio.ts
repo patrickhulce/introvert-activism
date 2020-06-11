@@ -6,7 +6,12 @@ import * as fs from 'fs-extra'
 import _ from 'lodash'
 import twilio from 'twilio'
 
+import {createLogger} from '../../shared/src/utils/logging'
+
+const log = createLogger('api:twilio')
+
 const TWILIO_NUMBER = process.env.TWILIO_NUMBER || ''
+const MAX_AGE_OF_CALL_IN_MS = 30 * 60 * 1000 // 30 minutes
 
 interface CallRecord {
   jwt: string
@@ -35,6 +40,20 @@ export class TwilioAgent {
 
     this._callsByCode = new Map()
     this._callsByMessageId = new Map()
+
+    setInterval(() => {
+      log.info(`clearing old calls, ${this._callsByCode.size} before`)
+      this._clearOldCalls()
+      log.info(`cleared old calls, ${this._callsByCode.size} after`)
+    }, 60e3)
+  }
+
+  private _clearOldCalls(): void {
+    for (const call of [...this._callsByCode.values()]) {
+      if (Date.now() - call.storedAt.getTime() < MAX_AGE_OF_CALL_IN_MS) continue
+      this._callsByCode.delete(call.callCode)
+      this._callsByMessageId.delete(call.messageId)
+    }
   }
 
   public isInProgress(): boolean {
@@ -112,7 +131,7 @@ export class TwilioAgent {
     return {twiml: response.toString()}
   }
 
-  public static twimlSilence(): {twiml: string} {
+  public static twimlPlaySilence(): {twiml: string} {
     const response = new twilio.twiml.VoiceResponse()
     response.pause({length: 1})
 

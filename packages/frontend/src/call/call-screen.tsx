@@ -288,7 +288,7 @@ function useCallStatusCallback(
             'x-remote-proxy-destination': props.userSettings.remoteApiOrigin,
           },
         )
-        isDone = fn(payload)
+        isDone = isDone || fn(payload)
         if (!isDone) await new Promise(r => setTimeout(r, 1000))
       }
     })()
@@ -299,16 +299,37 @@ function useCallStatusCallback(
   }, [callCode])
 }
 
-const Precall = (props: ChildProps & {twilioNumber: string; callCode: string}) => {
+const Precall = (props: ChildProps & {twilioNumber: string; callCode: string; retry(): void}) => {
   const classes = useStyles()
+  const [errorMessage, setErrorMessage] = React.useState('')
   useCallStatusCallback(props, props.callCode, payload => {
     if (payload.started) {
       props.setPhase(Phase.Midcall)
+      return true
+    } else if (payload.completed) {
+      setErrorMessage(`Call Expired`)
       return true
     }
 
     return false
   })
+
+  if (errorMessage) {
+    return (
+      <div className={classes.containerSection}>
+        <div>{errorMessage}</div>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => {
+            setErrorMessage('')
+            props.retry()
+          }}>
+          Try Again
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <div className={classes.containerSection}>
@@ -410,42 +431,59 @@ const Postcall = (props: ChildProps) => {
   )
 }
 
+async function requestCallCode(
+  messageId: string,
+  userSettings: UserSettings,
+  setCallCode: (s: string) => void,
+  setTwilioNumber: (s: string) => void,
+  setErrorMessage: (s: string) => void,
+): Promise<void> {
+  const audioResponse = await fetch(`/api/messages/${messageId}/audio`)
+  const audioBase64 = _arrayBufferToBase64(await audioResponse.arrayBuffer())
+  const createResponse = await fetch(`/api/remote/calls`, {
+    method: 'POST',
+    headers: {
+      'Content-type': 'application/json',
+      'x-remote-proxy-destination': userSettings.remoteApiOrigin,
+    },
+    body: JSON.stringify({
+      jwt: userSettings.accessToken,
+      targetNumber: '+15558675309',
+      messageId: messageId,
+      messageAudioBase64: audioBase64,
+    }),
+  })
+
+  if (createResponse.status !== 200) {
+    const extraMsg = await createResponse.text().catch(() => 'unknown')
+    setErrorMessage(`HTTP Error ${createResponse.status} ${extraMsg}`)
+    return
+  }
+
+  const {callCode, twilioNumber} = await createResponse.json()
+  setCallCode(callCode)
+  setTwilioNumber(twilioNumber)
+  setErrorMessage('')
+}
+
 const Call = (props: ChildProps) => {
   const [errorMessage, setErrorMessage] = React.useState('')
   const [twilioNumber, setTwilioNumber] = React.useState('')
   const [callCode, setCallCode] = React.useState('')
+  const retry = () => {
+    requestCallCode(
+      props.options.messageId,
+      props.userSettings,
+      setCallCode,
+      setTwilioNumber,
+      setErrorMessage,
+    )
+  }
 
   React.useEffect(() => {
     if (props.phase !== Phase.Precall) return
-    ;(async () => {
-      const audioResponse = await fetch(`/api/messages/${props.options.messageId}/audio`)
-      const audioBase64 = _arrayBufferToBase64(await audioResponse.arrayBuffer())
-      const createResponse = await fetch(`/api/remote/calls`, {
-        method: 'POST',
-        headers: {
-          'Content-type': 'application/json',
-          'x-remote-proxy-destination': props.userSettings.remoteApiOrigin,
-        },
-        body: JSON.stringify({
-          jwt: props.userSettings.accessToken,
-          targetNumber: '+15558675309',
-          messageId: props.options.messageId,
-          messageAudioBase64: audioBase64,
-        }),
-      })
-
-      if (createResponse.status !== 200) {
-        const extraMsg = await createResponse.text().catch(() => 'unknown')
-        setErrorMessage(`HTTP Error ${createResponse.status} ${extraMsg}`)
-        return
-      }
-
-      const {callCode, twilioNumber} = await createResponse.json()
-      setCallCode(callCode)
-      setTwilioNumber(twilioNumber)
-      setErrorMessage('')
-    })()
-  }, [props.phase])
+    retry()
+  }, [props.phase, props.options.messageId])
 
   if (props.phase < Phase.Precall) return <></>
   if (errorMessage) {
@@ -454,6 +492,9 @@ const Call = (props: ChildProps) => {
         Oops! An error occurred. Double check you have the correct{' '}
         <Link to="/settings">settings</Link> and try again.
         <pre>{errorMessage}</pre>
+        <Button variant="contained" color="primary" onClick={retry}>
+          Try Again
+        </Button>
       </div>
     )
   }
@@ -462,7 +503,7 @@ const Call = (props: ChildProps) => {
 
   if (props.phase === Phase.Midcall) return <Midcall callCode={callCode} {...props} />
   if (props.phase === Phase.Postcall) return <Postcall {...props} />
-  return <Precall callCode={callCode} twilioNumber={twilioNumber} {...props} />
+  return <Precall callCode={callCode} twilioNumber={twilioNumber} retry={retry} {...props} />
 }
 
 export const MakeACall = (): JSX.Element => {

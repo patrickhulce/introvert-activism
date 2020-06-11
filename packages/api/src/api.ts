@@ -335,12 +335,13 @@ export function createCallRouter(): {
     createHandler(async (req, res) => {
       const callCode = req.params.callCode
       const callRecord = await twilio.confirmCallCode(callCode)
-      if (!callRecord) return res.sendStatus(500)
+      const {twiml} = callRecord
+        ? TwilioAgent.twimlPlayAudioFile(
+            `${PUBLIC_INTERNET_PREFIX}/webhooks/audio-file/${callCode}`,
+          )
+        : TwilioAgent.twimlPlaySilence()
       res.set('Content-Type', 'text/xml')
-      res.send(
-        TwilioAgent.twimlPlayAudioFile(`${PUBLIC_INTERNET_PREFIX}/webhooks/audio-file/${callCode}`)
-          .twiml,
-      )
+      res.send(twiml)
     }),
   )
 
@@ -348,11 +349,8 @@ export function createCallRouter(): {
     '/webhooks/conference-update/:callCode/stop',
     validateTwilioHookMiddleware(twilio),
     createHandler(async (req, res) => {
-      const callCode = req.params.callCode
-      const callRecord = await twilio.confirmCallCode(callCode)
-      if (!callRecord) return res.sendStatus(500)
       res.set('Content-Type', 'text/xml')
-      res.send(TwilioAgent.twimlSilence().twiml)
+      res.send(TwilioAgent.twimlPlaySilence().twiml)
     }),
   )
 
