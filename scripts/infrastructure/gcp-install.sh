@@ -30,8 +30,7 @@ sudo service nginx restart
 sudo useradd -m -s $(which bash) -G sudo activist || echo 'activist already exists'
 sudo mv /tmp/ssh_key /home/activist/ssh_key
 sudo mv /tmp/env_vars /home/activist/.envrc
-sudo chown activist.activist /home/activist/ssh_key /home/activist/.envrc /home/activist/gcp-post-update.sh
-sudo chmod +x /home/activist/gcp-post-update.sh
+sudo chown activist.activist /home/activist/ssh_key /home/activist/.envrc
 
 sudo -i -u activist bash <<EOF
 cd /home/activist
@@ -47,4 +46,4 @@ EOF
 sudo mv /tmp/gcp-post-update.sh /home/activist/introvert-activism.git/hooks/post-update
 sudo chown activist.activist /home/activist/introvert-activism.git/hooks/post-update
 sudo chmod +x /home/activist/introvert-activism.git/hooks/post-update
-sudo -u activist bash /home/activist/introvert-activism.git/hooks/post-update
+sudo -i -u activist bash /home/activist/introvert-activism.git/hooks/post-update

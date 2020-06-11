@@ -15,11 +15,10 @@ set -euxo pipefail
 #   - Zones https://cloud.google.com/compute/docs/regions-zones
 
 ZONE="us-central1-a"
-INSTANCE_TYPE="n1-standard-1"
+INSTANCE_TYPE="e2-micro"
 
 gcloud compute instances create introvert-activism-server \
       --image-family=ubuntu-1804-lts --image-project=ubuntu-os-cloud \
-      --maintenance-policy=TERMINATE \
       --boot-disk-size=10GB \
       --zone=$ZONE \
       --machine-type=$INSTANCE_TYPE \
