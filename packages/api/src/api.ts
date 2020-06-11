@@ -1,5 +1,6 @@
 import bodyParser from 'body-parser'
 import express from 'express'
+import fetch from 'isomorphic-fetch'
 import * as jwt from 'jsonwebtoken'
 import {v4 as uuidv4} from 'uuid'
 
@@ -160,7 +161,7 @@ function validateJwtMiddleware(): (
   next: express.NextFunction,
 ) => void {
   return (req, res, next) => {
-    const rawToken = req.body?.jwt || req.header('x-jwt') || req.header('authorization') || ''
+    const rawToken = req.body?.jwt || req.header('authorization') || ''
     const token = rawToken.replace(/^bearer\s+/i, '').trim()
     jwt.verify(token, JWT_SECRET, {ignoreExpiration: true}, err => {
       if (!err) return next()
@@ -361,14 +362,18 @@ function createProxyRouter(): express.Router {
     let destination = req.header('x-remote-proxy-destination') || REMOTE_PROXY_DESTINATION
     if (destination.endsWith('/')) destination = destination.slice(0, destination.length - 1)
     destination = `${destination}${req.path}`
-    log.info('proxying', req.path, 'to', destination)
 
-    const options: RequestInit = {method: req.method}
+    const headers: Record<string, string> = {}
+    const options: RequestInit = {method: req.method, headers}
+    if (req.headers.authorization) {
+      headers.authorization = req.headers.authorization
+    }
     if (req.body) {
-      options.headers = {'content-type': 'application/json'}
+      headers['content-type'] = 'application/json'
       options.body = JSON.stringify(req.body)
     }
 
+    log.info('proxying', req.path, 'to', destination)
     const response = await fetch(destination, options)
     log.info('proxy response received', response.status, response.url)
     if (response.status === 200) res.json(await response.json())

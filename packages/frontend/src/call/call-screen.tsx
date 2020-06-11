@@ -443,6 +443,7 @@ const Call = (props: ChildProps) => {
       const {callCode, twilioNumber} = await createResponse.json()
       setCallCode(callCode)
       setTwilioNumber(twilioNumber)
+      setErrorMessage('')
     })()
   }, [props.phase])
 
