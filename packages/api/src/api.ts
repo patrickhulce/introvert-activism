@@ -14,6 +14,7 @@ const FALLBACK_ORIGIN = 'https://api.introvertactivism.org'
 const PUBLIC_INTERNET_PREFIX = process.env.PUBLIC_INTERNET_PREFIX || FALLBACK_ORIGIN
 const REMOTE_PROXY_DESTINATION = process.env.REMOTE_PROXY_DESTINATION || FALLBACK_ORIGIN
 const JWT_SECRET = process.env.JWT_SECRET || ''
+const TARGET_NUMBER_OVERRIDE = process.env.TWILIO_TEST_CALL_NUMBER || ''
 
 function makeResponse<T>(payload: T): Api.Response<T> {
   return {
@@ -199,7 +200,7 @@ export function createCallRouter(): {
 
       const callRecord = await twilio.createCallRecord({
         jwt,
-        targetNumber: process.env.TWILIO_TEST_CALL_NUMBER || targetNumber,
+        targetNumber: TARGET_NUMBER_OVERRIDE || targetNumber,
         messageId,
         messageAudio: convertedAudio,
         storedAt: new Date(),
@@ -370,7 +371,9 @@ function createProxyRouter(): express.Router {
     }
     if (req.body) {
       headers['content-type'] = 'application/json'
-      options.body = JSON.stringify(req.body)
+      const body = {...req.body}
+      if (TARGET_NUMBER_OVERRIDE && body.targetNumber) body.targetNumber = TARGET_NUMBER_OVERRIDE
+      options.body = JSON.stringify(body)
     }
 
     log.info('proxying', req.path, 'to', destination)

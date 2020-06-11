@@ -7,7 +7,6 @@ import _ from 'lodash'
 import twilio from 'twilio'
 
 const TWILIO_NUMBER = process.env.TWILIO_NUMBER || ''
-const TARGET_NUMBER_OVERRIDE = process.env.TWILIO_TEST_CALL_NUMBER || ''
 
 interface CallRecord {
   jwt: string
@@ -168,7 +167,7 @@ export class TwilioAgent {
     if (!callRecord) throw new Error(`Could not find call for code ${code}`)
     const targetCall = await this._client.conferences(conferenceId).participants.create({
       from: TWILIO_NUMBER,
-      to: TARGET_NUMBER_OVERRIDE || callRecord.targetNumber,
+      to: callRecord.targetNumber,
       endConferenceOnExit: true,
     })
 
