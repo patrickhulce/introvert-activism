@@ -34,3 +34,20 @@ In another...
 ```bash
 yarn start
 ```
+
+## Run Locally with Ngrok
+
+In one terminal...
+
+```bash
+ngrok http 8675
+```
+
+In another...
+
+```bash
+export PUBLIC_INTERNET_PREFIX="http://XXXXXXXXXXX.ngrok.io/api/remote"
+export REMOTE_SERVER_BEHAVIOR="ngrok"
+```
+
+Update your Twilio number call webhook in the [Twilio console](https://www.twilio.com/console/phone-numbers/) to be `http://XXXXXXXXXXX.ngrok.io/api/remote/webhooks/initiate-call`
