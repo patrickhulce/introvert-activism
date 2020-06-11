@@ -2,11 +2,11 @@
 
 const express = require('express')
 
-const {createCallRouter, intializeMiddleware} = require('../../../dist-dev/api/src/api.js')
+const {createCallRouter, initializeMiddleware} = require('../../../dist-dev/api/src/api.js')
 
 const app = express()
 
-intializeMiddleware(app)
+initializeMiddleware(app)
 const {router, twilio} = createCallRouter()
 app.use('/', router)
 app.listen(8675, () => console.log('Listening on http://localhost:8675'))
