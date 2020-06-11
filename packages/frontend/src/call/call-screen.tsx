@@ -385,6 +385,7 @@ const Postcall = (props: ChildProps) => {
           variant="contained"
           color="primary"
           onClick={() => {
+            props.setPhase(Phase.GetRepresentative)
             props.setOptions({
               ...props.options,
               representativeId: '',
