@@ -18,4 +18,6 @@ fi
 
 yarn install --check-files
 yarn build:api
-pm2 start --name introvert-activism ./packages/api/bin/server.js || pm2 reload introvert-activism --kill-timeout 180000
+
+pm2 start --name introvert-activism ./packages/api/bin/server.js ||
+  pm2 reload introvert-activism --kill-timeout 180000 --update-env
