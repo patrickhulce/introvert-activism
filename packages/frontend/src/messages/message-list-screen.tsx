@@ -19,13 +19,13 @@ export const MessageList = (): JSX.Element => {
     messages: [],
   })
 
+  async function reloadMessages() {
+    const response = (await (await fetch('/api/messages')).json()) as Api.ResponseTypes['Messages']
+    setData(response.payload)
+  }
+
   React.useEffect(() => {
-    ;(async () => {
-      const response = (await (
-        await fetch('/api/messages')
-      ).json()) as Api.ResponseTypes['Messages']
-      setData(response.payload)
-    })()
+    reloadMessages()
   }, [])
 
   return (
@@ -47,7 +47,15 @@ export const MessageList = (): JSX.Element => {
                 </ListItemAvatar>
                 <ListItemText primary={message.display_name} secondary={`${message.duration}s`} />
                 <ListItemSecondaryAction>
-                  <IconButton edge="end" aria-label="delete">
+                  <IconButton
+                    edge="end"
+                    aria-label="delete"
+                    onClick={async () => {
+                      await fetch(`/api/messages/${message.uuid}`, {
+                        method: 'DELETE',
+                      })
+                      reloadMessages()
+                    }}>
                     <DeleteIcon />
                   </IconButton>
                 </ListItemSecondaryAction>
