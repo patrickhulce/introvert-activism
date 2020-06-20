@@ -9,6 +9,8 @@
     "build:api": "tsc",
     "build:frontend": "cd packages/frontend && yarn build",
     "build:watch": "bash ./scripts/build-watch.sh",
+    "deploy": "git push -f production HEAD:master",
+    "generate-token": "node packages/api/bin/create-jwt.js",
     "start": "cd packages/electron && yarn start",
     "package": "bash ./scripts/package.sh",
     "test": "yarn test:lint",

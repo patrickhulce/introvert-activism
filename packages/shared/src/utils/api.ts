@@ -12,7 +12,7 @@ export interface Message {
   uuid: string
   display_name: string
   file_path: string
-  duration: number
+  script: string
 }
 
 export interface MessagesPayload {

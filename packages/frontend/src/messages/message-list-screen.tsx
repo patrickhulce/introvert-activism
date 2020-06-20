@@ -45,7 +45,10 @@ export const MessageList = (): JSX.Element => {
                     <CallIcon />
                   </Avatar>
                 </ListItemAvatar>
-                <ListItemText primary={message.display_name} secondary={`${message.duration}s`} />
+                <ListItemText
+                  primary={message.display_name}
+                  secondary={message.script.slice(0, 140)}
+                />
                 <ListItemSecondaryAction>
                   <IconButton
                     edge="end"

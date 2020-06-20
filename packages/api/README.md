@@ -9,7 +9,7 @@ $ curl -v localhost:8675/api/messages/
 Make a message.
 
 ```sh
-$ curl -v localhost:8675/api/messages/ -H 'Content-Type: application/json' -d '{"display_name": "POSTed", "duration": 5}'
+$ curl -v localhost:8675/api/messages/ -H 'Content-Type: application/json' -d '{"display_name": "POSTed", "script": "Hi, I am..."}'
 ```
 
 Delete a message.
@@ -21,7 +21,7 @@ $ curl -v -X DELETE localhost:8675/api/messages/{messageId}
 Edit a message.
 
 ```sh
-$ curl -v localhost:8675/api/messages/{messageId} -X PUT -H 'Content-Type: application/json' -d '{"display_name": "PUTed", "duration": 0}'
+$ curl -v localhost:8675/api/messages/{messageId} -X PUT -H 'Content-Type: application/json' -d '{"display_name": "PUTed", "script": "Hi, I am..."}'
 ```
 
 Add audio file.
