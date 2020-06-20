@@ -38,6 +38,7 @@ const Message = (props: {
             } else {
               const audioEl = new Audio(`/api/messages/${props.message.uuid}/audio`)
               audioEl.play()
+              audioEl.onended = () => setAudio(null)
               setAudio(audioEl)
             }
           }}

@@ -12,6 +12,7 @@ import TextField from '@material-ui/core/TextField'
 import Typography from '@material-ui/core/Typography'
 import {makeStyles, Theme, createStyles} from '@material-ui/core/styles'
 import ChatIcon from '@material-ui/icons/Chat'
+import PauseIcon from '@material-ui/icons/Pause'
 import PlayIcon from '@material-ui/icons/PlayArrow'
 import {Link} from 'react-router-dom'
 
@@ -219,6 +220,37 @@ const GetRepresentative = (props: ChildProps) => {
   )
 }
 
+const MessagePlayButton = (props: {message: Api.Message}) => {
+  const [audio, setAudio] = React.useState<HTMLAudioElement | null>(null)
+
+  React.useEffect(() => {
+    return () => {
+      if (audio) {
+        audio.pause()
+      }
+    }
+  }, [audio])
+
+  return (
+    <IconButton
+      edge="end"
+      aria-label="play message"
+      onClick={() => {
+        if (audio) {
+          audio.pause()
+          setAudio(null)
+        } else {
+          const audioEl = new Audio(`/api/messages/${props.message.uuid}/audio`)
+          audioEl.play()
+          audioEl.onended = () => setAudio(null)
+          setAudio(audioEl)
+        }
+      }}>
+      {audio ? <PauseIcon /> : <PlayIcon />}
+    </IconButton>
+  )
+}
+
 const GetMessage = (props: ChildProps) => {
   const classes = useStyles()
   const [errorMessage, setErrorMessage] = React.useState<null | string>(null)
@@ -261,9 +293,7 @@ const GetMessage = (props: ChildProps) => {
                 secondary={message.script.slice(0, 140)}
               />
               <ListItemSecondaryAction>
-                <IconButton edge="end" aria-label="play message">
-                  <PlayIcon />
-                </IconButton>
+                <MessagePlayButton message={message} />
               </ListItemSecondaryAction>
             </ListItem>
           ))}
