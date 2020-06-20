@@ -186,10 +186,10 @@ const RecordMessageScreen_ = (props: {
   return (
     <div style={{paddingTop: 20}}>
       <Typography variant="h4">Record a Message</Typography>
-      <Typography variant="body1">
+      <Typography variant="body1" component="div">
         Record a message for a representative that you will play while on the phone. Give it a
-        descriptive name like "Senator Cruz - Police Brutality" so you remember which one to play
-        later.
+        descriptive name like <pre style={{display: 'inline'}}>Senator Cruz - Police Brutality</pre>{' '}
+        so you remember which one to play later.
       </Typography>
       {errorMessage ? (
         <Typography variant="body1" style={{color: 'red', fontWeight: 'bold'}}>

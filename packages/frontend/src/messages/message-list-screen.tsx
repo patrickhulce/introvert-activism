@@ -1,5 +1,6 @@
 import * as React from 'react'
 
+import {Typography} from '@material-ui/core'
 import Avatar from '@material-ui/core/Avatar'
 import IconButton from '@material-ui/core/IconButton'
 import List from '@material-ui/core/List'
@@ -30,7 +31,9 @@ export const MessageList = (): JSX.Element => {
 
   return (
     <>
-      <h1>Messages</h1>
+      <Typography variant="h4" style={{marginTop: 20}}>
+        Messages
+      </Typography>
       <div>
         <List>
           {data.messages.map(message => {
