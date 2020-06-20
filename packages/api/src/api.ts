@@ -177,6 +177,7 @@ function validateTwilioHookMiddleware(
   return (req, res, next) => {
     if (twilio.validateTwilioSignature(req)) return next()
     res.sendStatus(401)
+    log.error('Error validating Twilio webhook request', req.headers, req.body)
   }
 }
 
