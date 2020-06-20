@@ -146,8 +146,16 @@ export class TwilioAgent {
     return {twiml: response.toString()}
   }
 
-  public validateTwilioSignature(req: import('express').Request): boolean {
-    return twilio.validateExpressRequest(req, process.env.TWILIO_TOKEN || '')
+  public validateTwilioSignature(
+    publicInternetPrefix: string,
+    req: import('express').Request,
+  ): boolean {
+    return twilio.validateRequest(
+      process.env.TWILIO_TOKEN || '',
+      req.headers['x-twilio-signature'] as string,
+      `${publicInternetPrefix}${req.originalUrl}`,
+      req.body,
+    )
   }
 
   public async createCallRecord(

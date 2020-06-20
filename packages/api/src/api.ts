@@ -175,7 +175,7 @@ function validateTwilioHookMiddleware(
   twilio: TwilioAgent,
 ): (req: express.Request, res: express.Response, next: express.NextFunction) => void {
   return (req, res, next) => {
-    if (twilio.validateTwilioSignature(req)) return next()
+    if (twilio.validateTwilioSignature(PUBLIC_INTERNET_PREFIX, req)) return next()
     res.sendStatus(401)
     log.error('Error validating Twilio webhook request', req.headers, req.body)
   }
