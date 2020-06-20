@@ -9,6 +9,16 @@ const Message = (props: {
   message: Api.Message
   history: import('react-router-dom').RouteChildrenProps['history']
 }) => {
+  const [audio, setAudio] = React.useState<HTMLAudioElement | null>(null)
+
+  React.useEffect(() => {
+    return () => {
+      if (audio) {
+        audio.pause()
+      }
+    }
+  }, [audio])
+
   return (
     <>
       <Typography variant="body1" style={{marginTop: 20}}>
@@ -18,6 +28,22 @@ const Message = (props: {
         {props.message.script}
       </Typography>
       <div style={{marginTop: 20}}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => {
+            if (audio) {
+              audio.pause()
+              setAudio(null)
+            } else {
+              const audioEl = new Audio(`/api/messages/${props.message.uuid}/audio`)
+              audioEl.play()
+              setAudio(audioEl)
+            }
+          }}
+          style={{marginRight: 10}}>
+          {audio ? 'Stop' : 'Play'}
+        </Button>
         <Button
           variant="contained"
           component={RouterLink}
