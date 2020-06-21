@@ -25,8 +25,9 @@ async function startServer(localFilePath: string): Promise<{port: number; close(
   app.use('/static', express.static(findFrontendDirectory()))
   app.use('/api', router)
 
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     const server = createServer(app)
+    server.once('error', reject)
     server.listen(8675, () => {
       const address = server.address()
       if (typeof address === 'string' || !address) throw new Error(`Invalid address ${address}`)

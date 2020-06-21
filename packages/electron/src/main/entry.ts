@@ -1,4 +1,4 @@
-import {app, BrowserWindow} from 'electron'
+import {app, BrowserWindow, dialog} from 'electron'
 
 import {ComlinkTarget} from '../../../shared/src/utils/comlink-electron'
 import {createLogger} from '../../../shared/src/utils/logging'
@@ -8,7 +8,7 @@ import {createWorker, initIpcRouter} from './ipc-router'
 
 const log = createLogger('electron:main')
 
-app.once('ready', async () => {
+async function run() {
   log.info('app is ready')
   initIpcRouter()
   const serverWorker = await createWorker<ServerWorker>(ComlinkTarget.ServerWorker)
@@ -27,5 +27,16 @@ app.once('ready', async () => {
   window.once('ready-to-show', () => {
     log.info('app is visible')
     window.show()
+  })
+}
+
+app.once('ready', () => {
+  run().catch(err => {
+    dialog.showMessageBoxSync({
+      message: `Introvert Activism encountered an error: ${err.message}`,
+      type: 'error',
+    })
+    log.error(err)
+    process.exit(1)
   })
 })
