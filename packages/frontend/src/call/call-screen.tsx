@@ -35,6 +35,12 @@ function _arrayBufferToBase64(buffer: ArrayBuffer) {
   return window.btoa(binary)
 }
 
+function formatNumber(number: string): string {
+  if (!/^\+\d{11}$/.test(number)) return number
+  number = number.slice(1)
+  return `${number.slice(0, 1)} (${number.slice(1, 4)}) ${number.slice(4, 7)}-${number.slice(7)}`
+}
+
 enum Phase {
   GetLocation,
   GetRepresentative,
@@ -194,7 +200,7 @@ const GetRepresentative = (props: ChildProps) => {
               .map(rep => (
                 <ListItem
                   key={rep.id}
-                  button
+                  button={!props.options.representativeId as any}
                   onClick={() =>
                     props.setOptions({
                       ...props.options,
@@ -270,19 +276,26 @@ const GetMessage = (props: ChildProps) => {
 
   if (props.phase < Phase.GetMessage) return <></>
 
+  const filteredMessages = props.options.messageId
+    ? messages?.filter(msg => msg.uuid === props.options.messageId)
+    : messages
+
   return (
     <div className={classes.containerSection}>
       <Typography variant="h5" className={classes.textAlign}>
         What do you want to say?
       </Typography>
       {errorMessage ? <span>ERROR: {errorMessage}</span> : null}
-      {messages ? (
+      {filteredMessages ? (
         <List>
-          {messages.map(message => (
+          {filteredMessages.map(message => (
             <ListItem
               key={message.uuid}
-              button
-              onClick={() => props.setOptions({...props.options, messageId: message.uuid})}>
+              button={!props.options.messageId as any}
+              onClick={() => {
+                if (props.options.messageId) return
+                props.setOptions({...props.options, messageId: message.uuid})
+              }}>
               <ListItemAvatar>
                 <Avatar>
                   <ChatIcon />
@@ -293,7 +306,7 @@ const GetMessage = (props: ChildProps) => {
                 secondary={message.script.slice(0, 140)}
               />
               <ListItemSecondaryAction>
-                <MessagePlayButton message={message} />
+                {props.options.messageId ? null : <MessagePlayButton message={message} />}
               </ListItemSecondaryAction>
             </ListItem>
           ))}
@@ -370,7 +383,7 @@ const Precall = (props: ChildProps & {twilioNumber: string; callCode: string; re
   return (
     <div className={classes.containerSection}>
       <Typography variant="h5" className={classes.textAlign}>
-        Call {props.twilioNumber} and enter:
+        Call {formatNumber(props.twilioNumber)} and enter:
       </Typography>
       <Typography variant="h3" className={classes.textAlign}>
         {props.callCode}
