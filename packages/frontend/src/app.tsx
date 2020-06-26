@@ -10,7 +10,15 @@ import ListItemIcon from '@material-ui/core/ListItemIcon'
 import ListItemText from '@material-ui/core/ListItemText'
 import Toolbar from '@material-ui/core/Toolbar'
 import Typography from '@material-ui/core/Typography'
-import {createStyles, makeStyles, Theme} from '@material-ui/core/styles'
+import orange from '@material-ui/core/colors/orange'
+import red from '@material-ui/core/colors/red'
+import {
+  createStyles,
+  makeStyles,
+  Theme,
+  createMuiTheme,
+  ThemeProvider,
+} from '@material-ui/core/styles'
 import CallIcon from '@material-ui/icons/Call'
 import HomeIcon from '@material-ui/icons/Home'
 import MenuIcon from '@material-ui/icons/Menu'
@@ -24,6 +32,13 @@ import {MessageList} from './messages/message-list-screen'
 import {RecordMessageScreen} from './messages/new-message-screen'
 import {SettingsScreen} from './settings/settings-screen'
 import {Welcome} from './welcome/welcome-screen'
+
+const theme = createMuiTheme({
+  palette: {
+    primary: {main: orange[400]},
+    secondary: red,
+  },
+})
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -81,47 +96,49 @@ export const App = (): JSX.Element => {
   const [sidebarIsOpen, setSidebarIsOpen] = useState(false)
 
   return (
-    <div className={classes.root}>
-      <Router>
-        <AppBar position="static">
-          <Toolbar>
-            <IconButton
-              edge="start"
-              className={classes.menuButton}
-              color="inherit"
-              aria-label="menu"
-              onClick={() => setSidebarIsOpen(current => !current)}>
-              <MenuIcon />
-            </IconButton>
-            <Typography variant="h6" className={classes.title}>
-              Introvert Activism
-            </Typography>
-            <IconButton
-              edge="start"
-              className={classes.menuButton}
-              component={RouterLink}
-              color="inherit"
-              aria-label="menu"
-              to="/settings">
-              <SettingsIcon />
-            </IconButton>
-          </Toolbar>
-        </AppBar>
-        <Drawer anchor="left" open={sidebarIsOpen} onClose={() => setSidebarIsOpen(false)}>
-          <NavLinks closeMenu={() => setSidebarIsOpen(false)} />
-        </Drawer>
-        <div className={classes.routeContent}>
-          <Switch>
-            <Route exact path="/welcome" component={Welcome} />
-            <Route exact path="/record" component={RecordMessageScreen} />
-            <Route exact path="/messages" component={MessageList} />
-            <Route exact path="/messages/:id" component={MessageDetail} />
-            <Route exact path="/call" component={MakeACall} />
-            <Route exact path="/settings" component={SettingsScreen} />
-            <Redirect to="/welcome" />
-          </Switch>
-        </div>
-      </Router>
-    </div>
+    <ThemeProvider theme={theme}>
+      <div className={classes.root}>
+        <Router>
+          <AppBar position="static">
+            <Toolbar>
+              <IconButton
+                edge="start"
+                className={classes.menuButton}
+                color="inherit"
+                aria-label="menu"
+                onClick={() => setSidebarIsOpen(current => !current)}>
+                <MenuIcon />
+              </IconButton>
+              <Typography variant="h6" className={classes.title}>
+                Introvert Activism
+              </Typography>
+              <IconButton
+                edge="start"
+                className={classes.menuButton}
+                component={RouterLink}
+                color="inherit"
+                aria-label="menu"
+                to="/settings">
+                <SettingsIcon />
+              </IconButton>
+            </Toolbar>
+          </AppBar>
+          <Drawer anchor="left" open={sidebarIsOpen} onClose={() => setSidebarIsOpen(false)}>
+            <NavLinks closeMenu={() => setSidebarIsOpen(false)} />
+          </Drawer>
+          <div className={classes.routeContent}>
+            <Switch>
+              <Route exact path="/welcome" component={Welcome} />
+              <Route exact path="/record" component={RecordMessageScreen} />
+              <Route exact path="/messages" component={MessageList} />
+              <Route exact path="/messages/:id" component={MessageDetail} />
+              <Route exact path="/call" component={MakeACall} />
+              <Route exact path="/settings" component={SettingsScreen} />
+              <Redirect to="/welcome" />
+            </Switch>
+          </div>
+        </Router>
+      </div>
+    </ThemeProvider>
   )
 }
