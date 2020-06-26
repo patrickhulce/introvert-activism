@@ -10,6 +10,9 @@ import {createLogger} from '../../shared/src/utils/logging'
 
 const log = createLogger('api:twilio')
 
+const PRODUCTION_TRIGGERS = !!process.env.TWILIO_PRODUCTION
+const TWILIO_ACCOUNT = process.env.TWILIO_SID || ''
+const FORCE_CLEAR_TRIGGERS = !!process.env.TWILIO_FORCE_CLEAR_TRIGGERS
 const TWILIO_NUMBER = process.env.TWILIO_NUMBER || ''
 const MAX_AGE_OF_CALL_IN_MS = 30 * 60 * 1000 // 30 minutes
 
@@ -34,9 +37,7 @@ export class TwilioAgent {
   private _callsByMessageId: Map<string, CallRecord>
 
   public constructor() {
-    this._client = process.env.TWILIO_SID
-      ? twilio(process.env.TWILIO_SID, process.env.TWILIO_TOKEN)
-      : ({} as any)
+    this._client = TWILIO_ACCOUNT ? twilio(TWILIO_ACCOUNT, process.env.TWILIO_TOKEN) : ({} as any)
 
     this._callsByCode = new Map()
     this._callsByMessageId = new Map()
@@ -58,6 +59,56 @@ export class TwilioAgent {
 
   public isInProgress(): boolean {
     return [...this._callsByCode.values()].some(call => call.sourceNumber)
+  }
+
+  public async createUsageTriggerIfNecessary(publicUrl: string): Promise<void> {
+    if (!TWILIO_ACCOUNT) {
+      log.verbose(`no twilio account configured, skipping trigger creation`)
+      return
+    }
+
+    if (!PRODUCTION_TRIGGERS) {
+      log.verbose(`not in production, skipping trigger creation`)
+      return
+    }
+
+    let triggers = await this._client.usage.triggers?.list()
+    if (!triggers) throw new Error('Could not fetch triggers')
+
+    log.verbose(`found ${triggers.length} existing triggers`)
+
+    if (FORCE_CLEAR_TRIGGERS && triggers.length) {
+      log.verbose(`deleting ${triggers.length} triggers`)
+      await Promise.all(triggers.map(trigger => trigger.remove()))
+      triggers = await this._client.usage.triggers?.list()
+      if (!triggers) throw new Error('Could not fetch triggers')
+      if (triggers.length) throw new Error('Failed to delete triggers')
+    }
+
+    if (triggers.find(trigger => trigger.callbackUrl === publicUrl)) {
+      log.verbose('trigger already exists for URL, skipping creation')
+    } else {
+      log.verbose(
+        `creating trigger, not found in existing: \n${triggers
+          .map(t => `${t.callbackUrl} - ${t.friendlyName}`)
+          .join('\n')}`,
+      )
+
+      this._client.usage.triggers?.create({
+        friendlyName: '$5/day cap',
+        recurring: 'daily',
+        usageCategory: 'totalprice',
+        triggerBy: 'price',
+        triggerValue: '+5',
+        callbackUrl: publicUrl,
+        callbackMethod: 'GET',
+      })
+    }
+  }
+
+  public async suspendAccount(): Promise<void> {
+    const account = await this._client.api.accounts(TWILIO_ACCOUNT)
+    await account.update({status: 'suspended'})
   }
 
   public static async convertToMp3Buffer(audioFile: Buffer, mimeType: string): Promise<Buffer> {

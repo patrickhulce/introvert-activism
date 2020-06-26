@@ -26,6 +26,7 @@ gcloud compute instances create introvert-activism-server \
       --tags http-server,https-server
 
 cat > .tmp_env_vars <<EOF
+export TWILIO_PRODUCTION=yes
 export TWILIO_SID="$TWILIO_SID"
 export TWILIO_TOKEN="$TWILIO_TOKEN"
 export TWILIO_NUMBER="$TWILIO_NUMBER"

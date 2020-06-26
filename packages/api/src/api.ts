@@ -188,6 +188,10 @@ export function createCallRouter(): {
   const twilio = new TwilioAgent()
   const router = express.Router()
 
+  twilio
+    .createUsageTriggerIfNecessary(`${PUBLIC_INTERNET_PREFIX}/webhooks/usage-trigger`)
+    .catch(err => log.error('twilio trigger failure', err))
+
   // JWT is sent as auth token for all service API calls
   // Phase 1 - Trade a JWT token+senator number+message for a call code (app POST /calls)
   // Phase 2 - Call the twilio number (user)
@@ -364,6 +368,15 @@ export function createCallRouter(): {
       if (!callRecord) return res.sendStatus(500)
       res.set('Content-Type', 'audio/mpeg')
       res.send(callRecord.messageAudio)
+    }),
+  )
+
+  router.get(
+    '/webhooks/usage-trigger',
+    validateTwilioHookMiddleware(twilio),
+    createHandler(async (req, res) => {
+      await twilio.suspendAccount()
+      res.send(204)
     }),
   )
 
