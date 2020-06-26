@@ -4,6 +4,7 @@ import {ComlinkTarget} from '../../../shared/src/utils/comlink-electron'
 import {createLogger} from '../../../shared/src/utils/logging'
 import {ServerWorker} from '../worker/server/server'
 
+import {checkForUpdates} from './autoupdate'
 import {createWorker, initIpcRouter} from './ipc-router'
 
 const log = createLogger('electron:main')
@@ -28,6 +29,8 @@ async function run() {
     log.info('app is visible')
     window.show()
   })
+
+  checkForUpdates()
 }
 
 app.once('ready', () => {
