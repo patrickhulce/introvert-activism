@@ -12,4 +12,4 @@ rm -rf dist-ts/frontend/*
 mkdir -p dist-ts/frontend/dist/
 cp -R packages/frontend/dist/* dist-ts/frontend/dist/
 
-electron-builder --config=./build/electron-builder.json
+electron-builder --config=./build/electron-builder.json $@
