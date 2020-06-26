@@ -15,7 +15,7 @@ export const SettingsScreen = (): JSX.Element => {
     formValues.remoteApiOrigin !== settings.remoteApiOrigin
 
   return (
-    <div style={{marginTop: 20}}>
+    <div style={{paddingTop: 20}}>
       <Typography variant="h4">Settings</Typography>
       <form>
         <div style={{margin: `10px 0`}}>

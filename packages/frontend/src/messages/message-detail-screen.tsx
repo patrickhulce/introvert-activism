@@ -21,10 +21,10 @@ const Message = (props: {
 
   return (
     <>
-      <Typography variant="body1" style={{marginTop: 20}}>
+      <Typography variant="body1" style={{paddingTop: 20}}>
         {props.message.display_name}
       </Typography>
-      <Typography variant="body1" style={{marginTop: 20}}>
+      <Typography variant="body1" style={{paddingTop: 20}}>
         {props.message.script}
       </Typography>
       <div style={{marginTop: 20}}>
@@ -89,7 +89,7 @@ export const MessageDetail = (
 
   return (
     <>
-      <Typography variant="h4" style={{marginTop: 20}}>
+      <Typography variant="h4" style={{paddingTop: 20}}>
         Message Details
       </Typography>
       {errorMessage ? (

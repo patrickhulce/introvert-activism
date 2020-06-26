@@ -24,6 +24,9 @@ const useStyles = makeStyles((theme: Theme) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
     },
+    howtoListItem: {
+      marginBottom: 10,
+    },
     settingsContainer: {
       marginTop: theme.spacing(4),
       marginLeft: theme.spacing(3),
@@ -40,6 +43,31 @@ const useStyles = makeStyles((theme: Theme) =>
     },
   }),
 )
+
+const HowTo = () => {
+  const classes = useStyles()
+  return (
+    <>
+      <Typography variant="h5" className={classes.textAlign} style={{paddingTop: 20}}>
+        How To Use
+      </Typography>
+      <ol>
+        <li className={classes.howtoListItem}>
+          <Link to="/settings">Configure your access token</Link>. If you don't have an access
+          token, ask whoever introduced you to Introvert Activism for one.
+        </li>
+        <li className={classes.howtoListItem}>
+          <Link to="/record">Record a message</Link>. Ask your representative to do something
+          specific.
+        </li>
+        <li className={classes.howtoListItem}>
+          <Link to="/call">Call the Introvert Activism number</Link> to be connected with your
+          representatives and play the recorded message.
+        </li>
+      </ol>
+    </>
+  )
+}
 
 const SettingsPrompt = () => {
   const classes = useStyles()
@@ -63,6 +91,7 @@ export const Welcome = (): JSX.Element => {
 
   return (
     <div className={classes.mainContainer}>
+      <HowTo />
       {settingsNotConfigured && (
         <div>
           <SettingsPrompt />

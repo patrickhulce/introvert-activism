@@ -31,7 +31,7 @@ export const MessageList = (): JSX.Element => {
 
   return (
     <>
-      <Typography variant="h4" style={{marginTop: 20}}>
+      <Typography variant="h4" style={{paddingTop: 20}}>
         Messages
       </Typography>
       <div>
