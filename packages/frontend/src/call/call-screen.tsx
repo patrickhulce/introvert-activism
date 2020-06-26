@@ -466,6 +466,7 @@ const Postcall = (props: ChildProps) => {
 
 async function requestCallCode(
   messageId: string,
+  numberToCall: string,
   userSettings: UserSettings,
   setCallCode: (s: string) => void,
   setTwilioNumber: (s: string) => void,
@@ -481,7 +482,7 @@ async function requestCallCode(
     },
     body: JSON.stringify({
       jwt: userSettings.accessToken,
-      targetNumber: '+15558675309',
+      targetNumber: numberToCall,
       messageId: messageId,
       messageAudioBase64: audioBase64,
     }),
@@ -506,6 +507,7 @@ const Call = (props: ChildProps) => {
   const retry = () => {
     requestCallCode(
       props.options.messageId,
+      props.options.numberToCall,
       props.userSettings,
       setCallCode,
       setTwilioNumber,
