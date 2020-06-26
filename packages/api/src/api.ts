@@ -237,7 +237,7 @@ export function createCallRouter(): {
       while (Date.now() - startTime < timeout) {
         callRecord = await twilio.confirmCallCode(callCode)
         if (!callRecord) break
-        if (callRecord.sourceNumber) break
+        if (callRecord.sourceNumber && req.query?.initial) break
         await new Promise(r => setTimeout(r, 100))
       }
 

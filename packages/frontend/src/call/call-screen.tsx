@@ -308,6 +308,7 @@ const GetMessage = (props: ChildProps) => {
 function useCallStatusCallback(
   props: ChildProps,
   callCode: string,
+  waitForInitialOnly: boolean,
   fn: (payload: {started: boolean; completed: boolean}) => boolean,
 ) {
   React.useEffect(() => {
@@ -315,7 +316,9 @@ function useCallStatusCallback(
     ;(async () => {
       while (!isDone) {
         const payload = await fetchJSON<{started: boolean; completed: boolean}>(
-          `/api/remote/calls/${callCode}/status?timeout=10000`,
+          `/api/remote/calls/${callCode}/status?timeout=10000${
+            waitForInitialOnly ? '&initial=1' : ''
+          }`,
           {
             Authorization: `bearer ${props.userSettings.accessToken}`,
             'x-remote-proxy-destination': props.userSettings.remoteApiOrigin,
@@ -335,7 +338,7 @@ function useCallStatusCallback(
 const Precall = (props: ChildProps & {twilioNumber: string; callCode: string; retry(): void}) => {
   const classes = useStyles()
   const [errorMessage, setErrorMessage] = React.useState('')
-  useCallStatusCallback(props, props.callCode, payload => {
+  useCallStatusCallback(props, props.callCode, true, payload => {
     if (payload.started) {
       props.setPhase(Phase.Midcall)
       return true
@@ -379,7 +382,7 @@ const Precall = (props: ChildProps & {twilioNumber: string; callCode: string; re
 const Midcall = (props: ChildProps & {callCode: string}) => {
   const classes = useStyles()
   const [hasBeenPlayed, setHasBeenPlayed] = React.useState(false)
-  useCallStatusCallback(props, props.callCode, payload => {
+  useCallStatusCallback(props, props.callCode, false, payload => {
     if (payload.completed) {
       props.setPhase(Phase.Postcall)
       return true
