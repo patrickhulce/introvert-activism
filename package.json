@@ -2,7 +2,7 @@
   "private": true,
   "name": "introvert-activism",
   "description": "The production package.json for the published app.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "dist-ts/electron/src/main/entry.js",
   "scripts": {
     "build": "yarn build:api && yarn build:frontend",
