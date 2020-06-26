@@ -28,6 +28,7 @@
     "minimumSystemVersion": "10.12.0"
   },
   "publish": {
-    "provider": "github"
+    "provider": "github",
+    "releaseType": "release"
   }
 }
