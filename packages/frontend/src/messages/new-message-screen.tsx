@@ -4,7 +4,7 @@ import {TextField, Typography, Button} from '@material-ui/core'
 import Meyda from 'meyda'
 import {withRouter} from 'react-router-dom'
 
-const DEFAULT_SCRIPT = `Protip: Write your script here so you can read as you record.`
+const DEFAULT_SCRIPT = `Hi, My name is ____, and I'm a constituent from _____. My zipcode is _____. I'm calling in support of senate/house bill _____. Congress must take immediate steps to __________. Thank you for your time and attention.`
 
 type MediaRecorder = any
 
@@ -188,8 +188,8 @@ const RecordMessageScreen_ = (props: {
       <Typography variant="h4">Record a Message</Typography>
       <Typography variant="body1" component="div">
         Record a message for a representative that you will play while on the phone. Give it a
-        descriptive name like <pre style={{display: 'inline'}}>Senator Cruz - Police Brutality</pre>{' '}
-        so you remember which one to play later.
+        descriptive name like <pre style={{display: 'inline'}}>Senate - Police Brutality</pre> so
+        you remember which one to play later.
       </Typography>
       {errorMessage ? (
         <Typography variant="body1" style={{color: 'red', fontWeight: 'bold'}}>
