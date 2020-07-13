@@ -68,6 +68,7 @@ interface Representative {
 }
 
 interface ChildProps {
+  messages: Api.Message[] | undefined
   userSettings: UserSettings
   setUserSettings: (s: UserSettings) => void
   phase: Phase
@@ -119,6 +120,21 @@ const SettingsPrompt = () => {
       <Typography variant="body1" style={{marginTop: 20}}>
         It looks like this might be your first time using Introvert Activism. You will need to{' '}
         <Link to="/settings">configure a few settings</Link> before jumping onto calls.
+      </Typography>
+    </div>
+  )
+}
+
+const MessagesPrompt = () => {
+  const classes = useStyles()
+  return (
+    <div className={classes.containerSection}>
+      <Typography variant="h5" className={classes.textAlign}>
+        No Messages Recorded
+      </Typography>
+      <Typography variant="body1" style={{marginTop: 20}}>
+        It looks like this might be your first time using Introvert Activism. You will need to{' '}
+        <Link to="/record">record a message</Link> before jumping onto calls.
       </Typography>
     </div>
   )
@@ -259,33 +275,18 @@ const MessagePlayButton = (props: {message: Api.Message}) => {
 
 const GetMessage = (props: ChildProps) => {
   const classes = useStyles()
-  const [errorMessage, setErrorMessage] = React.useState<null | string>(null)
-  const [messages, setMessages] = React.useState<Api.MessagesPayload['messages'] | undefined>(
-    undefined,
-  )
-
-  React.useEffect(() => {
-    if (props.phase !== Phase.GetMessage) return
-    fetchJSON<Api.ResponseTypes['Messages']>(`/api/messages`)
-      .then(response => {
-        if (response.payload.messages) setMessages(response.payload.messages)
-        else throw new Error(`No messages available ${JSON.stringify(response)}`)
-      })
-      .catch(err => setErrorMessage(`Sorry an error occurred! ${err.message}`))
-  }, [props.phase])
 
   if (props.phase < Phase.GetMessage) return <></>
 
   const filteredMessages = props.options.messageId
-    ? messages?.filter(msg => msg.uuid === props.options.messageId)
-    : messages
+    ? props.messages?.filter(msg => msg.uuid === props.options.messageId)
+    : props.messages
 
   return (
     <div className={classes.containerSection}>
       <Typography variant="h5" className={classes.textAlign}>
         What do you want to say?
       </Typography>
-      {errorMessage ? <span>ERROR: {errorMessage}</span> : null}
       {filteredMessages ? (
         <List>
           {filteredMessages.map(message => (
@@ -568,6 +569,11 @@ export const MakeACall = (): JSX.Element => {
     messageId: '',
   })
 
+  const [errorMessage, setErrorMessage] = React.useState<null | string>(null)
+  const [messages, setMessages] = React.useState<Api.MessagesPayload['messages'] | undefined>(
+    undefined,
+  )
+
   let phase = Phase.GetLocation
   if (/^\d{5}$/.test(options.zipcode)) phase = Phase.GetRepresentative
   if (options.numberToCall) phase = Phase.GetMessage
@@ -575,7 +581,33 @@ export const MakeACall = (): JSX.Element => {
   if (phaseState_ === Phase.Midcall) phase = phaseState_
   if (phaseState_ === Phase.Postcall) phase = phaseState_
 
-  const props = {phase, setPhase, options, setOptions, userSettings: settings, setUserSettings}
+  const props = {
+    phase,
+    setPhase,
+    messages,
+    options,
+    setOptions,
+    userSettings: settings,
+    setUserSettings,
+  }
+
+  React.useEffect(() => {
+    if (phase !== Phase.GetMessage && messages) return
+    fetchJSON<Api.ResponseTypes['Messages']>(`/api/messages`)
+      .then(response => {
+        if (response.payload.messages) setMessages(response.payload.messages)
+        else throw new Error(`No messages available ${JSON.stringify(response)}`)
+      })
+      .catch(err => setErrorMessage(`Sorry an error occurred! ${err.message}`))
+  }, [phase])
+
+  if (messages && !messages.length) {
+    return (
+      <div className={classes.container}>
+        <MessagesPrompt />
+      </div>
+    )
+  }
 
   if (!settings.accessToken || !settings.remoteApiOrigin) {
     return (
@@ -587,6 +619,7 @@ export const MakeACall = (): JSX.Element => {
 
   return (
     <div className={classes.container}>
+      {errorMessage ? <span>ERROR: {errorMessage}</span> : null}
       <GetLocation {...props} />
       <GetRepresentative {...props} />
       <GetMessage {...props} />
