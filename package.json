@@ -14,7 +14,8 @@
     "start": "cd packages/electron && yarn start",
     "package": "bash ./scripts/package.sh",
     "test": "yarn test:lint",
-    "test:lint": "eslint . --ext .ts,.tsx"
+    "test:lint": "eslint . --ext .ts,.tsx",
+    "release": "bash ./scripts/release.sh"
   },
   "repository": "https://github.com/patrickhulce/introvert-activism.git",
   "author": "Patrick Hulce <patrick.hulce@gmail.com>",
