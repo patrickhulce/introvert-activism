@@ -75,7 +75,7 @@ export const SettingsScreen = (): JSX.Element => {
             disabled={testState === TestState.Started}
             onClick={async () => {
               setTestState(TestState.Started)
-              const response = await fetch('/api/remote/calls/123456789/status?timeout=5000', {
+              const response = await fetch('/api/remote/calls/permissions?timeout=5000', {
                 headers: {
                   Authorization: `bearer ${formValues.accessToken}`,
                   'x-remote-proxy-destination': formValues.remoteApiOrigin,
