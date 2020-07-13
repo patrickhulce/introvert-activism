@@ -20,6 +20,7 @@
   "author": "Patrick Hulce <patrick.hulce@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "abort-controller": "^3.0.0",
     "body-parser": "^1.19.0",
     "electron-log": "^4.2.0",
     "electron-updater": "^4.3.1",

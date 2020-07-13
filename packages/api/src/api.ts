@@ -1,3 +1,4 @@
+import AbortController from 'abort-controller'
 import bodyParser from 'body-parser'
 import express from 'express'
 import fetch from 'isomorphic-fetch'
@@ -191,6 +192,14 @@ export function createCallRouter(): {
   twilio
     .createUsageTriggerIfNecessary(`${PUBLIC_INTERNET_PREFIX}/webhooks/usage-trigger`)
     .catch(err => log.error('twilio trigger failure', err))
+
+  router.get(
+    '/calls/permissions',
+    validateJwtMiddleware(),
+    createHandler(async (req, res) => {
+      res.sendStatus(204)
+    }),
+  )
 
   // JWT is sent as auth token for all service API calls
   // Phase 1 - Trade a JWT token+senator number+message for a call code (app POST /calls)
@@ -391,8 +400,15 @@ function createProxyRouter(): express.Router {
     if (destination.endsWith('/')) destination = destination.slice(0, destination.length - 1)
     destination = `${destination}${req.path}`
 
+    const abortController = new AbortController()
+    const timeoutMs = Number(req.query.timeout) || 60e3
+    const timeout = setTimeout(() => {
+      log.warn('request timed out')
+      abortController.abort()
+    }, timeoutMs)
+
     const headers: Record<string, string> = {}
-    const options: RequestInit = {method: req.method, headers}
+    const options: RequestInit = {method: req.method, headers, signal: abortController.signal}
     if (req.headers.authorization) {
       headers.authorization = req.headers.authorization
     }
@@ -403,12 +419,17 @@ function createProxyRouter(): express.Router {
       options.body = JSON.stringify(body)
     }
 
-    log.info('proxying', req.path, 'to', destination)
-    const response = await fetch(destination, options)
-    log.info('proxy response received', response.status, response.url)
-    if (response.status === 200) res.json(await response.json())
-    else if (response.status === 204) res.sendStatus(204)
-    else res.status(response.status).send(await response.text())
+    try {
+      log.info('proxying', req.path, 'to', destination)
+      const response = await fetch(destination, options)
+      clearTimeout(timeout)
+      log.info('proxy response received', response.status, response.url)
+      if (response.status === 200) res.json(await response.json())
+      else if (response.status === 204) res.sendStatus(204)
+      else res.status(response.status).send(await response.text())
+    } catch (err) {
+      res.status(500).send(`${err.stack}`)
+    }
   })
 
   return router
